@@ -1,10 +1,6 @@
-[![CircleCI](https://circleci.com/gh/w3f/polkadot-watcher-csv-exporter.svg?style=svg)](https://circleci.com/gh/w3f/polkadot-watcher-csv-exporter)
+[![CircleCI](https://circleci.com/gh/w3f/polkadot-watcher-transaction.svg?style=svg)](https://circleci.com/gh/w3f/polkadot-watcher-transaction)
 
-# polkadot-watcher-csv-exporter
-
-## Please Note
-All the relevant data model code is placed in [writeDataCSV](src/writeDataCSV.ts).  
-At the moment, that code is mainly based on https://github.com/mariopino/substrate-data-csv/blob/master/utils.js and I'd recommend to refactor it.
+# polkadot-watcher-transaction
 
 ## How to Run 
 
@@ -21,6 +17,3 @@ yarn
 yarn build
 yarn start
 ```
-
-## Output
-The default configuration will create a ./data-csv folder that will be populated with the chain data 
