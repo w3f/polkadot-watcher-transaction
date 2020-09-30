@@ -1,0 +1,24 @@
+environment: {{ .Environment.Name }}
+
+{{ if eq .Environment.Name "ci" }}
+image:
+  tag: {{ env "CIRCLE_SHA1" | default "kind" }}
+{{ else if eq .Environment.Name "local" }}
+image:
+  repo: localhost:5000/polkadot-watcher-transaction
+  tag: latest
+{{ end }}
+
+config:
+  port: 3000
+  logLevel: debug
+
+{{- if eq .Environment.Name "production" }}
+resources:
+  requests:
+    cpu: "100m"
+    memory: "500Mi"
+  limits:
+    cpu: "5000m"
+    memory: "1Gi"
+{{- end }}     
