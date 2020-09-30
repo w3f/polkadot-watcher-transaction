@@ -1,5 +1,4 @@
 environments:
-  production:
   ci:
   local:
 
@@ -9,29 +8,7 @@ repositories:
 
 releases:
 
-{{- if or (eq .Environment.Name "ci") (eq .Environment.Name "local") }} 
-
 - name: watcher-transaction
   chart: ../charts/polkadot-watcher-transaction
   values:
   - ./config/transaction-watcher-values.yaml.gotmpl
-
-{{- end }}
-
-{{- if eq .Environment.Name "production" }}  
-
-- name: kusama-watcher-transaction
-  namespace: kusama
-  chart: w3f/polkadot-watcher-transaction
-  values:
-  - ./config/kusama/transaction-watcher-values.yaml.gotmpl
-  - ./config/transaction-watcher-values.yaml.gotmpl
-
-- name: polkadot-watcher-transaction
-  namespace: polkadot
-  chart: w3f/polkadot-watcher-transaction
-  values:
-  - ./config/polkadot/transaction-watcher-values.yaml.gotmpl
-  - ./config/transaction-watcher-values.yaml.gotmpl
-  
-{{- end }}  

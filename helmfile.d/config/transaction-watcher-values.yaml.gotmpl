@@ -11,14 +11,4 @@ image:
 
 config:
   port: 3000
-  logLevel: debug
-
-{{- if eq .Environment.Name "production" }}
-resources:
-  requests:
-    cpu: "100m"
-    memory: "500Mi"
-  limits:
-    cpu: "5000m"
-    memory: "1Gi"
-{{- end }}     
+  logLevel: debug  
