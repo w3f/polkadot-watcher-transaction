@@ -3,10 +3,11 @@ import { Logger } from '@w3f/logger';
 import { Text } from '@polkadot/types/primitive';
 
 import {
-    InputConfig, SubscriberConfig, FreeBalance, TransactionData, InitializedMap, TransactionType, Notifier,
+    InputConfig, SubscriberConfig, FreeBalance, TransactionData, InitializedMap, TransactionType, Notifier, Subscribable,
 } from './types';
 import { asyncForEach } from './utils';
 import { ZeroBalance } from './constants';
+import { Balance, AccountInfo } from '@polkadot/types/interfaces';
 
 export class Subscriber {
     private chain: Text;
@@ -26,10 +27,7 @@ export class Subscriber {
         this.logLevel = cfg.logLevel;
         this.subscribe = cfg.subscribe
 
-        this._initializedTransactions = {};
-        for (const subscription of this.subscribe.transactions) {
-            this._initializedTransactions[subscription.name] = false;
-        }
+        this._initTransactions()
     }
 
     public start = async (): Promise<void> => {
@@ -59,6 +57,13 @@ export class Subscriber {
         );
     }
 
+    private _initTransactions = (): void => {
+      this._initializedTransactions = {};
+      for (const subscription of this.subscribe.transactions) {
+          this._initializedTransactions[subscription.name] = false;
+      }
+    }
+
     private  _triggerDebugActions = async (): Promise<void> => {
       this.logger.debug('debug mode active')
     }
@@ -68,42 +73,51 @@ export class Subscriber {
       await asyncForEach(this.subscribe.transactions, async (account) => {
           const { data: { free: previousFree } } = await this.api.query.system.account(account.address);
           freeBalance[account.address] = previousFree;
-          await this.api.query.system.account(account.address, async (acc) => {
-              const nonce = acc.nonce;
-              this.logger.info(`The nonce for ${account.name} is ${nonce}`);
-              const currentFree = acc.data.free;
-
-              if (this._initializedTransactions[account.name]) {
-                  const data: TransactionData = {
-                      name: account.name,
-                      address: account.address,
-                      networkId: this.networkId
-                  };
-
-                  // check if the action was performed by the account or externally
-                  const change = currentFree.sub(freeBalance[account.address]);
-                  if (!change.gt(ZeroBalance)) {
-                      this.logger.info(`Action performed from account ${account.name}`);
-
-                      data.txType = TransactionType.Sent;
-                  } else {
-                      this.logger.info(`Transfer received in account ${account.name}`);
-
-                      data.txType = TransactionType.Received;
-                  }
-
-                  freeBalance[account.address] = currentFree;
-
-                  try {
-                      await this.notifier.newTransaction(data);
-                  } catch (e) {
-                      this.logger.error(`could not notify transaction: ${e.message}`);
-                  }
-              } else {
-                  this._initializedTransactions[account.name] = true;
-              }
-          });
+          
+          await this.api.query.system.account(account.address, async (accountInfo) => { this._transactionHandler(accountInfo,account,freeBalance) });
       });
+  }
+
+  private _transactionHandler = async (accountInfo: AccountInfo, account: Subscribable, freeBalance: FreeBalance): Promise<void> => {
+    this.logger.info(`The nonce for ${account.name} is ${accountInfo.nonce}`);
+
+    if (this._initializedTransactions[account.name]) {
+        const data: TransactionData = {
+            name: account.name,
+            address: account.address,
+            networkId: this.networkId
+            //add hash
+        };
+
+        const currentFreeBalance = accountInfo.data.free;
+
+        this._setTransactionType(data,currentFreeBalance,freeBalance[account.address],account)
+
+        freeBalance[account.address] = currentFreeBalance;
+
+        try {
+            await this.notifier.newTransaction(data);
+        } catch (e) {
+            this.logger.error(`could not notify transaction: ${e.message}`);
+        }
+    } else {
+        this._initializedTransactions[account.name] = true;
+    }
+  }
+
+  private _setTransactionType = (data: TransactionData, currentFreeBalance: Balance, previousFreeBalance: Balance, account: Subscribable): void => {
+    
+    // check if the action was performed by the account or externally
+    const change = currentFreeBalance.sub(previousFreeBalance);
+    if (!change.gt(ZeroBalance)) {
+        this.logger.info(`Action performed from account ${account.name}`);
+
+        data.txType = TransactionType.Sent;
+    } else {
+        this.logger.info(`Transfer received in account ${account.name}`);
+
+        data.txType = TransactionType.Received;
+    }
   }
     
 }
