@@ -3,7 +3,7 @@ import { Logger } from '@w3f/logger';
 import { Text } from '@polkadot/types/primitive';
 
 import {
-    InputConfig, TransactionData, TransactionType, Notifier, Subscribable,
+    InputConfig, TransactionData, TransactionType, Notifier,
 } from './types';
 import { Header } from '@polkadot/types/interfaces';
 import Extrinsic from '@polkadot/types/extrinsic/Extrinsic';
@@ -15,7 +15,7 @@ export class Subscriber {
     private endpoint: string;
     private logLevel: string;
 
-    private subscriptions: Array<Subscribable>
+    private subscriptions: Map<string,string>
     
     constructor(
         cfg: InputConfig,
@@ -24,7 +24,10 @@ export class Subscriber {
         this.endpoint = cfg.endpoint;
         this.logLevel = cfg.logLevel;
         
-        this.subscriptions = cfg.subscribe.transactions
+        this.subscriptions = new Map<string,string>()
+        for (const subscription of cfg.subscribe.transactions) {
+          this.subscriptions.set(subscription.address,subscription.name)
+        }
     }
 
     public start = async (): Promise<void> => {
@@ -86,43 +89,40 @@ export class Subscriber {
       }
       this.logger.info(`received new transfer balances`)
 
-      const sender = signer
+      const sender = signer.toString()
       const receiver = args[0].toString()
       const unit = args[1].toString()
       const transactionHash = extrinsic.hash.toHex()
       this.logger.info(`\nsender: ${sender}\nreceiver: ${receiver}\nunit: ${unit}\nblockHash: ${blockHash}\ntransactionHash: ${transactionHash}`)
 
-      for (const subscription of this.subscriptions) {
+      if(this.subscriptions.has(sender)){
+        const data: TransactionData = {
+          name: this.subscriptions.get(sender),
+          address: sender,
+          networkId: this.networkId,
+          txType: TransactionType.Sent,
+          hash: transactionHash
+        };
 
-        if (subscription.address == sender.toString()){
-
-          const data: TransactionData = {
-            name: subscription.name,
-            address: subscription.address,
-            networkId: this.networkId,
-            txType: TransactionType.Sent,
-            hash: transactionHash
-          };
-
-          this._notifyNewTransaction(data)
-          
-        }
-
-        if (subscription.address == receiver.toString()){
-
-          const data: TransactionData = {
-            name: subscription.name,
-            address: subscription.address,
-            networkId: this.networkId,
-            txType: TransactionType.Received,
-            hash: transactionHash
-          };
-
-          this._notifyNewTransaction(data)
-          
-        }
+        this.logger.info(`notification to be sent:`)
+        this.logger.info(JSON.stringify(data))
+        this._notifyNewTransaction(data)
       }
 
+      if(this.subscriptions.has(receiver)){
+        const data: TransactionData = {
+          name: this.subscriptions.get(receiver),
+          address: receiver,
+          networkId: this.networkId,
+          txType: TransactionType.Received,
+          hash: transactionHash
+        };
+        
+        this.logger.info(`notification to be sent:`)
+        this.logger.info(JSON.stringify(data))
+        this._notifyNewTransaction(data)
+      }
+      
     }
 
     private _notifyNewTransaction = async (data: TransactionData): Promise<void> => {
