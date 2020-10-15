@@ -23,11 +23,15 @@ export class Subscriber {
         private readonly logger: Logger) {
         this.endpoint = cfg.endpoint;
         this.logLevel = cfg.logLevel;
-        
-        this.subscriptions = new Map<string,string>()
-        for (const subscription of cfg.subscribe.transactions) {
-          this.subscriptions.set(subscription.address,subscription.name)
-        }
+
+        this._initSubscriptions(cfg)
+    }
+
+    private _initSubscriptions = (cfg): void => {
+      this.subscriptions = new Map<string,string>()
+      for (const subscription of cfg.subscribe.transactions) {
+        this.subscriptions.set(subscription.address,subscription.name)
+      }
     }
 
     public start = async (): Promise<void> => {
@@ -87,13 +91,13 @@ export class Subscriber {
       if(method != 'transfer' || section != 'balances') {
         return
       }
-      this.logger.info(`received new transfer balances`)
+      this.logger.debug(`received new transfer balances`)
 
       const sender = signer.toString()
       const receiver = args[0].toString()
       const unit = args[1].toString()
       const transactionHash = extrinsic.hash.toHex()
-      this.logger.info(`\nsender: ${sender}\nreceiver: ${receiver}\nunit: ${unit}\nblockHash: ${blockHash}\ntransactionHash: ${transactionHash}`)
+      this.logger.debug(`\nsender: ${sender}\nreceiver: ${receiver}\nunit: ${unit}\nblockHash: ${blockHash}\ntransactionHash: ${transactionHash}`)
 
       if(this.subscriptions.has(sender)){
         const data: TransactionData = {

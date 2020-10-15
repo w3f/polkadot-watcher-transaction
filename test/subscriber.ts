@@ -17,19 +17,13 @@ should();
 let keyring: Keyring;
 
 const cfg = {
-    logLevel: 'debug',
+    logLevel: 'info',
     port: 3000,
     endpoint: 'some_endpoint',
     matrixbot: {
         endpoint: 'some_endpoint'
     },
-    networkId: 'some_networkId',
-    validators: [{
-        name: 'Alice',
-        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
-    }],
     subscribe: {
-        validatorSubscription: true,
         transactions: [{
             name: 'Alice',
             address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
@@ -37,9 +31,7 @@ const cfg = {
         {
             name: 'Bob',
             address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'
-        }],
-        producers: true,
-        offline: true
+        }]
     }
 };
 
