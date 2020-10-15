@@ -36,6 +36,7 @@ export enum TransactionType {
 export interface TransactionData extends Subscribable {
   txType?: TransactionType;
   networkId: string;
+  hash?: string;
 }
 
 export interface InitializedMap {

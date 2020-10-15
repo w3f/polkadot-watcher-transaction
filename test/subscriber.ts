@@ -17,7 +17,7 @@ should();
 let keyring: Keyring;
 
 const cfg = {
-    logLevel: 'info',
+    logLevel: 'debug',
     port: 3000,
     endpoint: 'some_endpoint',
     matrixbot: {
@@ -95,12 +95,6 @@ describe('Subscriber', () => {
 
     after(async () => {
         await testRPC.stop();
-    });
-
-    describe('constructor', () => {
-        it('creates an initialization object for all the cfg subscriber fields', () => {
-            subject.isInitialized['Bob'].should.eq(false);
-        });
     });
 
     describe('with an started instance', () => {

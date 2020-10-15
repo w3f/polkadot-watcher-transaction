@@ -7,7 +7,7 @@ import {
     TransactionType
 } from './types';
 
-export const MsgTemplate = {
+const MsgTemplate = {
     "receiver": "webhook",
     "status": "firing",
     "alerts": [
