@@ -84,12 +84,13 @@ export class Subscriber {
       if(method != 'transfer' || section != 'balances') {
         return
       }
-      this.logger.debug(`received new transfer balances`)
+      this.logger.info(`received new transfer balances`)
 
       const sender = signer
       const receiver = args[0].toString()
       const unit = args[1].toString()
-      this.logger.info(`sender: ${sender}\nreceiver: ${receiver}\nunit: ${unit}\nblockHash: ${blockHash}`)
+      const transactionHash = extrinsic.hash.toHex()
+      this.logger.info(`\nsender: ${sender}\nreceiver: ${receiver}\nunit: ${unit}\nblockHash: ${blockHash}\ntransactionHash: ${transactionHash}`)
 
       for (const subscription of this.subscriptions) {
 
@@ -100,7 +101,7 @@ export class Subscriber {
             address: subscription.address,
             networkId: this.networkId,
             txType: TransactionType.Sent,
-            hash: blockHash // shoudld be the Transaction Hash
+            hash: transactionHash
           };
 
           this._notifyNewTransaction(data)
@@ -114,7 +115,7 @@ export class Subscriber {
             address: subscription.address,
             networkId: this.networkId,
             txType: TransactionType.Received,
-            hash: blockHash // shoudld be the Transaction Hash
+            hash: transactionHash
           };
 
           this._notifyNewTransaction(data)
