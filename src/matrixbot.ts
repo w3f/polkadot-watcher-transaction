@@ -41,10 +41,10 @@ export class Matrixbot implements Notifier {
         let description: string;
         let alertname: string;
         if (data.txType === TransactionType.Sent) {
-            description = `New transaction sent from account ${data.name}, check https://polkascan.io/pre/${data.networkId}/account/${data.address}#transactions for details`;
+            description = `New transaction sent from account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
             alertname = 'TransactionSent';
         } else {
-            description = `New transaction received in account ${data.name}, check https://polkascan.io/pre/${data.networkId}/account/${data.address}#transactions for details`;
+            description = `New transaction received in account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
             alertname = 'TransactionReceived';
         }
         msg.alerts[0].labels.alertname = alertname;
