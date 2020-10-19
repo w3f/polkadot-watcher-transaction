@@ -1,6 +1,7 @@
 import fs, { WriteStream } from 'fs';
 import { Logger } from '@w3f/logger';
 import { DeriveAccountRegistration } from '@polkadot/api-derive/accounts/types';
+import Extrinsic from '@polkadot/types/extrinsic/Extrinsic';
 
 export const isDirEmpty = (path: string): boolean =>{
   return fs.readdirSync(path).length === 0
@@ -70,4 +71,9 @@ export const asyncForEach = async < T extends {} > (array: Array<T>, callback: (
   for (let index = 0; index < array.length; index++) {
       await callback(array[index], index, array);
   }
+}
+
+export const isTransferBalancesExtrinsic = (extrinsic: Extrinsic): boolean => {
+  const { method: { method, section } } = extrinsic;
+  return method == 'transfer' && section == 'balances'
 }

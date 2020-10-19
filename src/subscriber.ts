@@ -7,6 +7,7 @@ import {
 } from './types';
 import { Header } from '@polkadot/types/interfaces';
 import Extrinsic from '@polkadot/types/extrinsic/Extrinsic';
+import { isTransferBalancesExtrinsic } from './utils';
 
 export class Subscriber {
     private chain: Text;
@@ -67,6 +68,7 @@ export class Subscriber {
       this.api.rpc.chain.subscribeFinalizedHeads(async (header) => {
        
         await this._blocksHandler(header)
+
       })
     }
 
@@ -85,14 +87,14 @@ export class Subscriber {
 
     }
 
+    
+
     private _transferBalancesExtrinsicHandler = async (extrinsic: Extrinsic, blockHash: string): Promise<void> =>{
 
-      const { signer, method: { args, method, section } } = extrinsic;
-      if(method != 'transfer' || section != 'balances') {
-        return
-      }
+      if(!isTransferBalancesExtrinsic(extrinsic)) return
       this.logger.debug(`received new transfer balances`)
 
+      const { signer, method: { args } } = extrinsic;
       const sender = signer.toString()
       const receiver = args[0].toString()
       const unit = args[1].toString()
