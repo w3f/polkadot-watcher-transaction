@@ -2,15 +2,18 @@ import BN from 'bn.js';
 import * as tmp from 'tmp';
 import * as fs from 'fs-extra';
 import { Client, Keyring, Keystore, Balance } from '@w3f/polkadot-api-client';
+
 import { TestPolkadotRPC } from '@w3f/test-utils';
 import { createLogger } from '@w3f/logger';
 import { should } from 'chai';
 
 import { Subscriber } from '../src/subscriber';
 import {
+  ExtrinsicMock,
     NotifierMock,
 } from './mocks';
 import { TransactionType } from '../src/types';
+import { initClient,  } from './utils';
 
 should();
 
@@ -40,9 +43,11 @@ const nt = new NotifierMock();
 
 const testRPC = new TestPolkadotRPC();
 
+const extrinsicMock = new ExtrinsicMock(logger,testRPC)
+
 let subject: Subscriber;
 
-async function sendFromAliceToBob(): Promise<void> {
+const sendFromAliceToBob = async (client?: Client): Promise<void> =>{
     const alice = keyring.addFromUri('//Alice');
     const bob = keyring.addFromUri('//Bob');
 
@@ -56,13 +61,14 @@ async function sendFromAliceToBob(): Promise<void> {
     const ks: Keystore = { filePath: ksFile.name, passwordPath: passFile.name };
     const toSend = new BN(10000000000000);
 
-    const endpoint = testRPC.endpoint();
-    const client = new Client(endpoint, logger);
+    if(!client){
+      client = initClient(testRPC.endpoint())
+    }
 
     await client.send(ks, bob.address, toSend as Balance);
 }
 
-function checkTransaction(expectedName: string, expectedTxType: TransactionType): void {
+const checkTransaction = (expectedName: string, expectedTxType: TransactionType): void =>{
     let found = false;
 
     for (const data of nt.receivedData) {
@@ -77,7 +83,7 @@ function checkTransaction(expectedName: string, expectedTxType: TransactionType)
 
 describe('Subscriber', () => {
     before(async () => {
-        await testRPC.start('0.7.33');
+        await testRPC.start();
 
         keyring = new Keyring({ type: 'sr25519' });
 
@@ -104,5 +110,41 @@ describe('Subscriber', () => {
                 checkTransaction('Bob', TransactionType.Received);
             });
         });
+
+        describe('transferBalancesExtrinsicHandler', async () => {
+            it('is not transferBalances extrinsic', async () => {
+                const extrinsic = await extrinsicMock.generateNonTransferExtrinsic()
+
+                const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
+
+                isNewNotificationTriggered.should.be.false
+            });
+
+            it('is transferBalances extrinsic, but our addresses are not involved', async () => {
+                const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Charlie','//Dave')
+
+                const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
+
+                isNewNotificationTriggered.should.be.false
+            });
+
+            it('is transferBalances extrinsic 1', async () => {
+                const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Alice','//Bob')
+
+                const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
+
+                isNewNotificationTriggered.should.be.true
+            });
+
+            it('is transferBalances extrinsic 2', async () => {
+              const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Bob','//Alice')
+
+              const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
+
+              isNewNotificationTriggered.should.be.true
+            });
+        });
+
+        
     });
 });

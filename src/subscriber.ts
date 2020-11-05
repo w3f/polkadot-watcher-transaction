@@ -89,9 +89,9 @@ export class Subscriber {
 
     
 
-    private _transferBalancesExtrinsicHandler = async (extrinsic: Extrinsic, blockHash: string): Promise<void> =>{
-
-      if(!isTransferBalancesExtrinsic(extrinsic)) return
+    private _transferBalancesExtrinsicHandler = async (extrinsic: Extrinsic, blockHash: string): Promise<boolean> =>{
+      let isNewNotificationTriggered = false
+      if(!isTransferBalancesExtrinsic(extrinsic)) return isNewNotificationTriggered
       this.logger.debug(`received new transfer balances`)
 
       const { signer, method: { args } } = extrinsic;
@@ -113,6 +113,7 @@ export class Subscriber {
         this.logger.info(`notification to be sent:`)
         this.logger.info(JSON.stringify(data))
         this._notifyNewTransaction(data)
+        isNewNotificationTriggered = true
       }
 
       if(this.subscriptions.has(receiver)){
@@ -127,8 +128,10 @@ export class Subscriber {
         this.logger.info(`notification to be sent:`)
         this.logger.info(JSON.stringify(data))
         this._notifyNewTransaction(data)
+        isNewNotificationTriggered = true
       }
       
+      return isNewNotificationTriggered
     }
 
     private _notifyNewTransaction = async (data: TransactionData): Promise<void> => {
