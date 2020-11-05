@@ -5,7 +5,6 @@ export interface InputConfig {
     port: number;
     endpoint: string;
     subscribe: SubscriberConfig;
-    validators: Array<Subscribable>;
     matrixbot: MatrixbotConfig;
 }
 
@@ -16,8 +15,6 @@ export interface Subscribable {
 
 export interface SubscriberConfig {
   transactions: Array<Subscribable>;
-  producers: boolean;
-  offline: boolean;
 }
 
 export interface MatrixbotConfig {
@@ -36,6 +33,7 @@ export enum TransactionType {
 export interface TransactionData extends Subscribable {
   txType?: TransactionType;
   networkId: string;
+  hash?: string;
 }
 
 export interface InitializedMap {

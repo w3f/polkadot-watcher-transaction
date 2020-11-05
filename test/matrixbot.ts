@@ -16,11 +16,12 @@ const senderAddress = 'senderAddress';
 const receiverName = 'receiverName';
 const receiverAddress = 'receiverAddress';
 const networkId = 'networkId';
+const txHash = 'txHash';
 
-const expectedSentMessage = `New transaction sent from account ${senderName}, check https://polkascan.io/pre/${networkId}/account/${senderAddress}#transactions for details`;
+const expectedSentMessage = `New transaction sent from account ${senderName}, check https://polkascan.io/${networkId}/transaction/${txHash} for details`;
 const expectedSentAlertname = 'TransactionSent';
 
-const expectedReceivedMessage = `New transaction received in account ${receiverName}, check https://polkascan.io/pre/${networkId}/account/${receiverAddress}#transactions for details`;
+const expectedReceivedMessage = `New transaction received in account ${receiverName}, check https://polkascan.io/${networkId}/transaction/${txHash} for details`;
 const expectedReceivedAlertname = 'TransactionReceived';
 
 describe('Matrixbot', () => {
@@ -49,7 +50,8 @@ describe('Matrixbot', () => {
                 name: senderName,
                 txType: TransactionType.Sent,
                 address: senderAddress,
-                networkId: networkId
+                networkId: networkId,
+                hash: txHash
             };
 
             await subject.newTransaction(data);
@@ -75,7 +77,8 @@ describe('Matrixbot', () => {
                 name: receiverName,
                 txType: TransactionType.Received,
                 address: receiverAddress,
-                networkId: networkId
+                networkId: networkId,
+                hash: txHash
             };
 
             await subject.newTransaction(data);
