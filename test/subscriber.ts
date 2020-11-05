@@ -1,7 +1,4 @@
-import BN from 'bn.js';
-import * as tmp from 'tmp';
-import * as fs from 'fs-extra';
-import { Client, Keyring, Keystore, Balance } from '@w3f/polkadot-api-client';
+import { Client, Keyring } from '@w3f/polkadot-api-client';
 
 import { TestPolkadotRPC } from '@w3f/test-utils';
 import { createLogger } from '@w3f/logger';
@@ -13,7 +10,7 @@ import {
     NotifierMock,
 } from './mocks';
 import { TransactionType } from '../src/types';
-import { initClient,  } from './utils';
+import { initClient, sendFromAToB  } from './utils';
 
 should();
 
@@ -48,24 +45,12 @@ const extrinsicMock = new ExtrinsicMock(logger,testRPC)
 let subject: Subscriber;
 
 const sendFromAliceToBob = async (client?: Client): Promise<void> =>{
-    const alice = keyring.addFromUri('//Alice');
-    const bob = keyring.addFromUri('//Bob');
-
-    const pass = 'pass';
-    const aliceKeypairJson = keyring.toJson(alice.address, pass);
-    const ksFile = tmp.fileSync();
-    fs.writeSync(ksFile.fd, JSON.stringify(aliceKeypairJson));
-    const passFile = tmp.fileSync();
-    fs.writeSync(passFile.fd, pass);
-
-    const ks: Keystore = { filePath: ksFile.name, passwordPath: passFile.name };
-    const toSend = new BN(10000000000000);
 
     if(!client){
       client = initClient(testRPC.endpoint())
     }
 
-    await client.send(ks, bob.address, toSend as Balance);
+    await sendFromAToB('//Alice','//Bob',keyring,client)
 }
 
 const checkTransaction = (expectedName: string, expectedTxType: TransactionType): void =>{

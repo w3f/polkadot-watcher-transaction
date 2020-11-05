@@ -3,13 +3,10 @@
 
 import Extrinsic from '@polkadot/types/extrinsic/Extrinsic';
 import { Logger } from '@w3f/logger';
-import { Balance, Client, Keyring, Keystore } from '@w3f/polkadot-api-client';
+import { Client, Keyring } from '@w3f/polkadot-api-client';
 import { TransactionData } from '../src/types';
-import { initClient } from './utils';
+import { initClient, sendFromAToB } from './utils';
 import { TestPolkadotRPC } from '@w3f/test-utils';
-import * as tmp from 'tmp';
-import * as fs from 'fs-extra';
-import BN from 'bn.js';
 
 const delay = (ms: number): Promise<void> =>{
   return new Promise( resolve => setTimeout(resolve, ms) );
@@ -32,8 +29,6 @@ export class NotifierMock {
 }
 
 export class ExtrinsicMock {
-  private transferExtrinsic: Extrinsic
-  private nonTransferExtrinsic: Extrinsic
   private serverRPC: TestPolkadotRPC;
   private client: Client;
   private keyring: Keyring;
@@ -51,17 +46,17 @@ export class ExtrinsicMock {
   }
 
   generateTransferExtrinsic = async (AUri: string, BUri: string): Promise<Extrinsic> =>{
-    this.sendFromAToB(AUri,BUri)
-    return await this.getAndCheckAndSetExtrinsic(this.transferExtrinsic,'isEqual','balances','transfer')
+    sendFromAToB(AUri,BUri,this.keyring,this.client)
+    return await this.getAndCheckAndSetExtrinsic('isEqual','balances','transfer')
   }
 
   generateNonTransferExtrinsic = async (): Promise<Extrinsic> =>{
-    return await this.getAndCheckAndSetExtrinsic(this.nonTransferExtrinsic,'isNotEqual','balances','transfer')
+    return await this.getAndCheckAndSetExtrinsic('isNotEqual','balances','transfer')
   }
 
   //TODO refactor, the name smells
-  private getAndCheckAndSetExtrinsic = async (toBeSet: Extrinsic, checkLogic: string, expectedSection: string, expectedMethod: string): Promise<Extrinsic> =>{
-    if(toBeSet) toBeSet = undefined
+  private getAndCheckAndSetExtrinsic = async (checkLogic: string, expectedSection: string, expectedMethod: string): Promise<Extrinsic> =>{
+    let result: Extrinsic
 
     const api = await this.client.api()
 
@@ -76,18 +71,18 @@ export class ExtrinsicMock {
         switch (checkLogic) {
           case 'isEqual':
             if(method == expectedMethod && section == expectedSection){
-              toBeSet = extrinsic
+              result = extrinsic
             }
             break;
           case 'isNotEqual':
             if(method != expectedMethod || section != expectedSection){
-              toBeSet = extrinsic
+              result = extrinsic
             }
             break;  
         
           default:
             if(method == expectedMethod && section == expectedSection){
-              toBeSet = extrinsic
+              result = extrinsic
             }
             break;
         }
@@ -95,30 +90,15 @@ export class ExtrinsicMock {
       })
     })
 
-    while(!toBeSet){
+    while(!result){
       this.logger.info(`waiting for a ${expectedMethod} Extrinsic (${checkLogic}) to be produced ...`)
       await(delay(3000))
     }
     unsubscribe()
     
-    return toBeSet  
+    return result  
   }
 
-  private sendFromAToB = async (AUri: string, BUri: string): Promise<void> =>{  
-    const A = this.keyring.addFromUri(AUri);
-    const B = this.keyring.addFromUri(BUri);
-    const pass = 'pass';
-    const AKeypairJson = this.keyring.toJson(A.address, pass);
-    const ksFile = tmp.fileSync();
-    fs.writeSync(ksFile.fd, JSON.stringify(AKeypairJson));
-    const passFile = tmp.fileSync();
-    fs.writeSync(passFile.fd, pass);
-  
-    const ks: Keystore = { filePath: ksFile.name, passwordPath: passFile.name };
-    const toSend = new BN(10000000000000);
-  
-    await this.client.send(ks, B.address, toSend as Balance);
-  }
 }
 
 
