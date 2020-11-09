@@ -46,12 +46,12 @@ export class ExtrinsicMock {
   }
 
   generateTransferExtrinsic = async (AUri: string, BUri: string): Promise<Extrinsic> =>{
-    sendFromAToB(AUri,BUri,this.keyring,this.client)
-    return await this.getAndCheckAndSetExtrinsic('isEqual','balances','transfer')
+    sendFromAToB(AUri,BUri,this.keyring,this.client,true)
+    return await this.getAndCheckAndSetExtrinsic('isEqual','balances','transferKeepAlive')
   }
 
   generateNonTransferExtrinsic = async (): Promise<Extrinsic> =>{
-    return await this.getAndCheckAndSetExtrinsic('isNotEqual','balances','transfer')
+    return await this.getAndCheckAndSetExtrinsic('isNotEqual','balances','transferKeepAlive')
   }
 
   //TODO refactor, the name smells
