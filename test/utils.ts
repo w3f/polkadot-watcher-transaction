@@ -9,7 +9,7 @@ export const initClient = (endpoint: string, logger?: Logger): Client =>{
   else return new Client(endpoint)
 }
 
-export const sendFromAToB = async (AUri: string, BUri: string, keyring: Keyring, client: Client): Promise<void> =>{  
+export const sendFromAToB = async (AUri: string, BUri: string, keyring: Keyring, client: Client, isKeepAliveForced = false): Promise<void> =>{  
   const A = keyring.addFromUri(AUri);
   const B = keyring.addFromUri(BUri);
   const pass = 'pass';
@@ -22,5 +22,5 @@ export const sendFromAToB = async (AUri: string, BUri: string, keyring: Keyring,
   const ks: Keystore = { filePath: ksFile.name, passwordPath: passFile.name };
   const toSend = new BN(10000000000000);
 
-  await client.send(ks, B.address, toSend as Balance);
+  await client.send(ks, B.address, toSend as Balance, isKeepAliveForced)
 }

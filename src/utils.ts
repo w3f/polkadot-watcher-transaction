@@ -75,5 +75,5 @@ export const asyncForEach = async < T extends {} > (array: Array<T>, callback: (
 
 export const isTransferBalancesExtrinsic = (extrinsic: Extrinsic): boolean => {
   const { method: { method, section } } = extrinsic;
-  return method == 'transfer' && section == 'balances'
+  return section == 'balances' && ( method == 'transfer' || method == 'transferKeepAlive' )
 }
