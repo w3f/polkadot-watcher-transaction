@@ -42,6 +42,7 @@ export interface InitializedMap {
 
 export interface Notifier {
   newTransaction(data: TransactionData): Promise<string>;
+  newBalanceChange(data: TransactionData): Promise<string>;
 }
 
 interface LabelMap {

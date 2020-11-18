@@ -4,27 +4,38 @@
 import Extrinsic from '@polkadot/types/extrinsic/Extrinsic';
 import { Logger } from '@w3f/logger';
 import { Client, Keyring } from '@w3f/polkadot-api-client';
-import { TransactionData } from '../src/types';
+import { Notifier, TransactionData } from '../src/types';
 import { initClient, sendFromAToB } from './utils';
 import { TestPolkadotRPC } from '@w3f/test-utils';
 
 const delay = (ms: number): Promise<void> =>{
   return new Promise( resolve => setTimeout(resolve, ms) );
 }
-export class NotifierMock {
-    private _receivedData: Array<TransactionData> = [];
+export class NotifierMock implements Notifier{
+    private _receivedTransactions: Array<TransactionData> = [];
+    private _receivedBalanceChanges: Array<TransactionData> = [];
+
+    get receivedTransactions(): Array<TransactionData> {
+        return this._receivedTransactions;
+    }
+
+    get receivedBalanceChanges(): Array<TransactionData> {
+      return this._receivedBalanceChanges;
+    }
 
     newTransaction = async (data: TransactionData): Promise<string> =>{
-        this._receivedData.push(data);
+        this._receivedTransactions.push(data);
         return "";
     }
 
-    get receivedData(): Array<TransactionData> {
-        return this._receivedData;
+    newBalanceChange = async (data: TransactionData): Promise<string> =>{
+      this._receivedBalanceChanges.push(data);
+      return "";
     }
 
     resetReceivedData = (): void =>{
-        this._receivedData = [];
+        this._receivedTransactions = [];
+        this._receivedBalanceChanges = [];
     }
 }
 
@@ -94,6 +105,7 @@ export class ExtrinsicMock {
       this.logger.info(`waiting for a ${expectedMethod} Extrinsic (${checkLogic}) to be produced ...`)
       await(delay(3000))
     }
+    await(delay(3000))
     unsubscribe()
     
     return result  
