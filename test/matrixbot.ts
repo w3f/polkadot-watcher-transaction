@@ -18,11 +18,31 @@ const receiverAddress = 'receiverAddress';
 const networkId = 'networkId';
 const txHash = 'txHash';
 
-const expectedSentMessage = `New transaction sent from account ${senderName}, check https://polkascan.io/${networkId}/transaction/${txHash} for details`;
+const expectedSentMessage = `Finalization confirmation: new transaction sent from account ${senderName}, check https://polkascan.io/${networkId}/transaction/${txHash} for details`;
 const expectedSentAlertname = 'TransactionSent';
 
-const expectedReceivedMessage = `New transaction received in account ${receiverName}, check https://polkascan.io/${networkId}/transaction/${txHash} for details`;
+const expectedReceivedMessage = `Finalization confirmation: new transaction received in account ${receiverName}, check https://polkascan.io/${networkId}/transaction/${txHash} for details`;
 const expectedReceivedAlertname = 'TransactionReceived';
+
+const expectedBalanceDecreasedMessage = `New transaction sent from account ${senderName}, check https://polkascan.io/pre/${networkId}/account/${senderAddress}#transactions for details. A finalization confirmation should arrive soon...`;
+const expectedBalanceDecreasedAlertname = 'BalanceDecreased';
+
+const expectedBalanceIncreasedMessage = `New transaction received in account ${receiverName}, check https://polkascan.io/pre/${networkId}/account/${receiverAddress}#transactions for details. A finalization confirmation should arrive soon...`;
+const expectedBalanceIncreasedAlertname = 'BalanceIncreased';
+
+const mockRestNotifier = (alertname: string, message: string): void => {
+  nock(host).post(`/${path}`,_.matches(
+    {
+      alerts: [
+          {
+              labels: {
+                  alertname: alertname
+              },
+              annotations: { description: message }
+          }
+      ]
+    })).reply(200);
+}
 
 describe('Matrixbot', () => {
     describe('newTransaction', () => {
@@ -30,58 +50,60 @@ describe('Matrixbot', () => {
             nock.cleanAll();
         });
 
+        it('notifies balance decreased', async () => {
+          mockRestNotifier(expectedBalanceDecreasedAlertname,expectedBalanceDecreasedMessage)
+
+          const data = {
+              name: senderName,
+              txType: TransactionType.Sent,
+              address: senderAddress,
+              networkId: networkId,
+              hash: txHash
+          };
+
+          await subject.newBalanceChange(data);
+        });
+
+        it('notifies balance increased', async () => {
+          mockRestNotifier(expectedBalanceIncreasedAlertname,expectedBalanceIncreasedMessage)
+
+          const data = {
+              name: receiverName,
+              txType: TransactionType.Received,
+              address: receiverAddress,
+              networkId: networkId,
+              hash: txHash
+          };
+
+          await subject.newBalanceChange(data);
+        });
+
         it('notifies transactions sent', async () => {
-            nock(host)
-                .post(`/${path}`,
-                    _.matches({
-                        alerts: [
-                            {
-                                labels: {
-                                    alertname: expectedSentAlertname
-                                },
-                                annotations: { description: expectedSentMessage }
-                            }
-                        ]
-                    })
-                )
-                .reply(200);
+          mockRestNotifier(expectedSentAlertname,expectedSentMessage)
 
-            const data = {
-                name: senderName,
-                txType: TransactionType.Sent,
-                address: senderAddress,
-                networkId: networkId,
-                hash: txHash
-            };
+          const data = {
+              name: senderName,
+              txType: TransactionType.Sent,
+              address: senderAddress,
+              networkId: networkId,
+              hash: txHash
+          };
 
-            await subject.newTransaction(data);
+          await subject.newTransaction(data);
         });
 
         it('notifies transactions received', async () => {
-            nock(host)
-                .post(`/${path}`,
-                    _.matches({
-                        alerts: [
-                            {
-                                labels: {
-                                    alertname: expectedReceivedAlertname
-                                },
-                                annotations: { description: expectedReceivedMessage }
-                            }
-                        ]
-                    })
-                )
-                .reply(200);
+          mockRestNotifier(expectedReceivedAlertname,expectedReceivedMessage)
 
-            const data = {
-                name: receiverName,
-                txType: TransactionType.Received,
-                address: receiverAddress,
-                networkId: networkId,
-                hash: txHash
-            };
+          const data = {
+              name: receiverName,
+              txType: TransactionType.Received,
+              address: receiverAddress,
+              networkId: networkId,
+              hash: txHash
+          };
 
-            await subject.newTransaction(data);
+          await subject.newTransaction(data);
         });
     });
 });

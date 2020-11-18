@@ -3,11 +3,16 @@ import { Logger } from '@w3f/logger';
 import { Text } from '@polkadot/types/primitive';
 
 import {
-    InputConfig, TransactionData, TransactionType, Notifier,
+    InputConfig, TransactionData, TransactionType, Notifier, FreeBalance, SubscriberConfig,
 } from './types';
 import { Header } from '@polkadot/types/interfaces';
 import Extrinsic from '@polkadot/types/extrinsic/Extrinsic';
-import { isTransferBalancesExtrinsic } from './utils';
+import { asyncForEach, isTransferBalancesExtrinsic } from './utils';
+import { ZeroBalance } from './constants';
+
+interface InitializedMap {
+  [name: string]: boolean;
+}
 
 export class Subscriber {
     private chain: Text;
@@ -16,7 +21,9 @@ export class Subscriber {
     private endpoint: string;
     private logLevel: string;
 
+    private subscribe: SubscriberConfig;
     private subscriptions: Map<string,string>
+    private initializedBalanceSubscriptions: InitializedMap = {};
     
     constructor(
         cfg: InputConfig,
@@ -25,7 +32,13 @@ export class Subscriber {
         this.endpoint = cfg.endpoint;
         this.logLevel = cfg.logLevel;
 
+        this._initSubscribe(cfg)
         this._initSubscriptions(cfg)
+        this._initBalanceSubscriptions(cfg)
+    }
+
+    private _initSubscribe = (cfg): void => {
+      this.subscribe = cfg.subscribe
     }
 
     private _initSubscriptions = (cfg): void => {
@@ -35,12 +48,19 @@ export class Subscriber {
       }
     }
 
+    private _initBalanceSubscriptions = (cfg): void => {
+      for (const subscription of cfg.subscribe.transactions) {
+        this.initializedBalanceSubscriptions[subscription.name] = false;
+      }
+    }
+
     public start = async (): Promise<void> => {
         await this._initAPI();
 
         if(this.logLevel === 'debug') await this._triggerDebugActions()
 
         await this._handleNewHeadSubscriptions();
+        await this._handleAccountBalanceSubscription()
 
     }
 
@@ -61,6 +81,51 @@ export class Subscriber {
 
     private  _triggerDebugActions = async (): Promise<void> => {
       this.logger.debug('debug mode active')
+    }
+
+    private async _handleAccountBalanceSubscription(): Promise<void> {
+        const freeBalance: FreeBalance = {};
+        await asyncForEach(this.subscribe.transactions, async (account) => {
+            const { data: { free: previousFree } } = await this.api.query.system.account(account.address);
+            freeBalance[account.address] = previousFree;
+            await this.api.query.system.account(account.address, async (acc) => {
+                const nonce = acc.nonce;
+                this.logger.info(`The nonce for ${account.name} is ${nonce}`);
+                const currentFree = acc.data.free;
+
+                if (this.initializedBalanceSubscriptions[account.name]) {
+                    const data: TransactionData = {
+                        name: account.name,
+                        address: account.address,
+                        networkId: this.networkId
+                    };
+
+                    // check if the action was performed by the account or externally
+                    const change = currentFree.sub(freeBalance[account.address]);
+                    if (!change.gt(ZeroBalance)) {
+                        this.logger.info(`Action performed from account ${account.name}`);
+
+                        data.txType = TransactionType.Sent;
+                    } else {
+                        this.logger.info(`Transfer received in account ${account.name}`);
+
+                        data.txType = TransactionType.Received;
+                    }
+
+                    freeBalance[account.address] = currentFree;
+
+                    try {
+                      this.logger.info(`notification to be sent:`)
+                      this.logger.info(JSON.stringify(data))
+                      await this._notifyNewBalanceChange(data)
+                    } catch (e) {
+                        this.logger.error(`could not notify transaction: ${e.message}`);
+                    }
+                } else {
+                    this.initializedBalanceSubscriptions[account.name] = true;
+                }
+            });
+        });
     }
 
     private _handleNewHeadSubscriptions = async (): Promise<void> =>{
@@ -127,7 +192,7 @@ export class Subscriber {
         
         this.logger.info(`notification to be sent:`)
         this.logger.info(JSON.stringify(data))
-        this._notifyNewTransaction(data)
+        await this._notifyNewTransaction(data)
         isNewNotificationTriggered = true
       }
       
@@ -139,6 +204,14 @@ export class Subscriber {
         await this.notifier.newTransaction(data);
       } catch (e) {
           this.logger.error(`could not notify transaction: ${e.message}`);
+      }
+    }
+
+    private _notifyNewBalanceChange = async (data: TransactionData): Promise<void> => {
+      try {
+        await this.notifier.newBalanceChange(data);
+      } catch (e) {
+          this.logger.error(`could not notify balance change: ${e.message}`);
       }
     }
  

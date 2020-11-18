@@ -1,9 +1,7 @@
 import { Client, Keyring } from '@w3f/polkadot-api-client';
-
 import { TestPolkadotRPC } from '@w3f/test-utils';
 import { createLogger } from '@w3f/logger';
 import { should } from 'chai';
-
 import { Subscriber } from '../src/subscriber';
 import {
   ExtrinsicMock,
@@ -56,7 +54,7 @@ const sendFromAliceToBob = async (client?: Client): Promise<void> =>{
 const checkTransaction = (expectedName: string, expectedTxType: TransactionType): void =>{
     let found = false;
 
-    for (const data of nt.receivedData) {
+    for (const data of nt.receivedTransactions) {
         if (data.name === expectedName &&
             data.txType === expectedTxType) {
             found = true;
@@ -64,6 +62,19 @@ const checkTransaction = (expectedName: string, expectedTxType: TransactionType)
         }
     }
     found.should.be.true;
+}
+
+const checkBalanceChange = (expectedName: string, expectedTxType: TransactionType): void =>{
+  let found = false;
+
+  for (const data of nt.receivedBalanceChanges) {
+      if (data.name === expectedName &&
+          data.txType === expectedTxType) {
+          found = true;
+          break;
+      }
+  }
+  found.should.be.true;
 }
 
 describe('Subscriber', () => {
@@ -83,6 +94,17 @@ describe('Subscriber', () => {
     describe('with an started instance', () => {
         before(async () => {
             await subject.start();
+        });
+
+        describe('transactions', async () => {
+            it('should record balance changes', async () => {
+                nt.resetReceivedData();
+
+                await sendFromAliceToBob();
+
+                checkBalanceChange('Alice', TransactionType.Sent);
+                checkBalanceChange('Bob', TransactionType.Received);
+            });
         });
 
         describe('transactions', async () => {
