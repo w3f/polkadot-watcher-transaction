@@ -59,7 +59,7 @@ export class Subscriber {
 
         if(this.logLevel === 'debug') await this._triggerDebugActions()
 
-        await this._handleNewHeadSubscriptions();
+        false && await this._handleNewHeadSubscriptions(); //DISABLED
         await this._handleAccountBalanceSubscription()
 
     }
@@ -100,27 +100,31 @@ export class Subscriber {
                         networkId: this.networkId
                     };
 
+                    const enabledNotifications = {
+                        sent: account.enabledNotifications && account.enabledNotifications.sent != undefined ? account.enabledNotifications.sent : true,
+                        received: account.enabledNotifications && account.enabledNotifications.received != undefined ? account.enabledNotifications.received : true
+                    }
+                    let isNotificationEnabled = true
+
                     // check if the action was performed by the account or externally
                     const change = currentFree.sub(freeBalance[account.address]);
                     if (!change.gt(ZeroBalance)) {
                         this.logger.info(`Action performed from account ${account.name}`);
 
                         data.txType = TransactionType.Sent;
+                        isNotificationEnabled = enabledNotifications.sent
                     } else {
                         this.logger.info(`Transfer received in account ${account.name}`);
 
                         data.txType = TransactionType.Received;
+                        isNotificationEnabled = enabledNotifications.received
                     }
 
                     freeBalance[account.address] = currentFree;
 
-                    try {
-                      this.logger.info(`notification to be sent:`)
-                      this.logger.info(JSON.stringify(data))
+                    if(isNotificationEnabled){
                       await this._notifyNewBalanceChange(data)
-                    } catch (e) {
-                        this.logger.error(`could not notify transaction: ${e.message}`);
-                    }
+                    }  
                 } else {
                     this.initializedBalanceSubscriptions[account.name] = true;
                 }
@@ -209,6 +213,8 @@ export class Subscriber {
 
     private _notifyNewBalanceChange = async (data: TransactionData): Promise<void> => {
       try {
+        this.logger.info(`notification to be sent:`)
+        this.logger.info(JSON.stringify(data))
         await this.notifier.newBalanceChange(data);
       } catch (e) {
           this.logger.error(`could not notify balance change: ${e.message}`);

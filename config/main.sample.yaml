@@ -7,3 +7,6 @@ subscribe:
   transactions:
   - name: faucet
     address: EaG2CRhJWPb7qmdcJvy3LiWdh26Jreu9Dx6R1rXxPmYXoDk 
+    enabledNotifications:
+      received: false
+      sent: true

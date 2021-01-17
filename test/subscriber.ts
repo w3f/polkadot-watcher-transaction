@@ -33,14 +33,31 @@ const cfg = {
     }
 };
 
+const cfg2 = {
+  ...cfg,
+  subscribe: {
+      transactions: [{
+          name: 'Alice',
+          address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+          enabledNotifications: {
+            sent: false
+          }
+      },
+      {
+          name: 'Bob',
+          address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+          enabledNotifications: {
+            received: false
+          }
+      }]
+  }
+};
+
 const logger = createLogger();
-const nt = new NotifierMock();
 
 const testRPC = new TestPolkadotRPC();
 
 const extrinsicMock = new ExtrinsicMock(logger,testRPC)
-
-let subject: Subscriber;
 
 const sendFromAliceToBob = async (client?: Client): Promise<void> =>{
 
@@ -51,20 +68,20 @@ const sendFromAliceToBob = async (client?: Client): Promise<void> =>{
     await sendFromAToB('//Alice','//Bob',keyring,client)
 }
 
-const checkTransaction = (expectedName: string, expectedTxType: TransactionType): void =>{
-    let found = false;
+// const checkTransaction = (expectedName: string, expectedTxType: TransactionType): void =>{
+//     let found = false;
 
-    for (const data of nt.receivedTransactions) {
-        if (data.name === expectedName &&
-            data.txType === expectedTxType) {
-            found = true;
-            break;
-        }
-    }
-    found.should.be.true;
-}
+//     for (const data of nt.receivedTransactions) {
+//         if (data.name === expectedName &&
+//             data.txType === expectedTxType) {
+//             found = true;
+//             break;
+//         }
+//     }
+//     found.should.be.true;
+// }
 
-const checkBalanceChange = (expectedName: string, expectedTxType: TransactionType): void =>{
+const checkBalanceChange = (expectedName: string, expectedTxType: TransactionType, nt: NotifierMock, expectedOutcome = true): void =>{
   let found = false;
 
   for (const data of nt.receivedBalanceChanges) {
@@ -74,84 +91,110 @@ const checkBalanceChange = (expectedName: string, expectedTxType: TransactionTyp
           break;
       }
   }
-  found.should.be.true;
+  if(expectedOutcome)
+    found.should.be.true;
+  else
+    found.should.be.false;  
 }
 
 describe('Subscriber', () => {
-    before(async () => {
-        await testRPC.start();
+  before(async () => {
+      await testRPC.start();
+      keyring = new Keyring({ type: 'sr25519' });
+  });
 
-        keyring = new Keyring({ type: 'sr25519' });
+  after(async () => {
+      await testRPC.stop();
+  });
 
-        cfg.endpoint = testRPC.endpoint();
-        subject = new Subscriber(cfg, nt, logger);
-    });
+  describe('with a started instance, cfg1', () => {
+      let nt: NotifierMock
+      let subject: Subscriber
+      
+      before(async () => {
+          nt = new NotifierMock();
+          cfg.endpoint = testRPC.endpoint();
+          subject = new Subscriber(cfg, nt, logger);
+          await subject.start();
+      });
 
-    after(async () => {
-        await testRPC.stop();
-    });
+      describe('transactions', async () => {
+          it('should notify balance changes', async () => {
+              nt.resetReceivedData();
 
-    describe('with an started instance', () => {
-        before(async () => {
-            await subject.start();
-        });
+              await sendFromAliceToBob();
 
-        describe('transactions', async () => {
-            it('should record balance changes', async () => {
-                nt.resetReceivedData();
+              checkBalanceChange('Alice', TransactionType.Sent, nt);
+              checkBalanceChange('Bob', TransactionType.Received, nt);
+          });
+      });
 
-                await sendFromAliceToBob();
+      // describe('transactions', async () => {
+      //     it('should record sent and received transactions', async () => {
+      //         nt.resetReceivedData();
 
-                checkBalanceChange('Alice', TransactionType.Sent);
-                checkBalanceChange('Bob', TransactionType.Received);
-            });
-        });
+      //         await sendFromAliceToBob();
 
-        describe('transactions', async () => {
-            it('should record sent and received transactions', async () => {
-                nt.resetReceivedData();
+      //         checkTransaction('Alice', TransactionType.Sent);
+      //         checkTransaction('Bob', TransactionType.Received);
+      //     });
+      // });
 
-                await sendFromAliceToBob();
+      describe('transferBalancesExtrinsicHandler', async () => {
+          it('is not transferBalances extrinsic', async () => {
+              const extrinsic = await extrinsicMock.generateNonTransferExtrinsic()
 
-                checkTransaction('Alice', TransactionType.Sent);
-                checkTransaction('Bob', TransactionType.Received);
-            });
-        });
+              const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
 
-        describe('transferBalancesExtrinsicHandler', async () => {
-            it('is not transferBalances extrinsic', async () => {
-                const extrinsic = await extrinsicMock.generateNonTransferExtrinsic()
+              isNewNotificationTriggered.should.be.false
+          });
 
-                const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
+          it('is transferBalances extrinsic, but our addresses are not involved', async () => {
+              const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Charlie','//Dave')
 
-                isNewNotificationTriggered.should.be.false
-            });
+              const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
 
-            it('is transferBalances extrinsic, but our addresses are not involved', async () => {
-                const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Charlie','//Dave')
+              isNewNotificationTriggered.should.be.false
+          });
 
-                const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
-
-                isNewNotificationTriggered.should.be.false
-            });
-
-            it('is transferBalances extrinsic 1', async () => {
-                const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Alice','//Bob')
-
-                const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
-
-                isNewNotificationTriggered.should.be.true
-            });
-
-            it('is transferBalances extrinsic 2', async () => {
-              const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Bob','//Alice')
+          it('is transferBalances extrinsic 1', async () => {
+              const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Alice','//Bob')
 
               const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
 
               isNewNotificationTriggered.should.be.true
-            });
-        });
+          });
 
-        
+          it('is transferBalances extrinsic 2', async () => {
+            const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Bob','//Alice')
+
+            const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
+
+            isNewNotificationTriggered.should.be.true
+          });
+      });
+  });
+
+  describe('with an started instance, cfg2', () => {
+    let nt: NotifierMock
+    
+    before(async () => {
+        nt = new NotifierMock();
+        const cfg = cfg2
+        cfg.endpoint = testRPC.endpoint();
+        const subject = new Subscriber(cfg, nt, logger);
+        await subject.start();
     });
+
+    describe('transactions', async () => {
+        it('should NOT notify balance changes', async () => {
+            nt.resetReceivedData();
+
+            await sendFromAliceToBob();
+
+            checkBalanceChange('Alice', TransactionType.Sent, nt, false);
+            checkBalanceChange('Bob', TransactionType.Received, nt, false);
+        });
+    });
+  });
 });
