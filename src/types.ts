@@ -11,6 +11,10 @@ export interface InputConfig {
 export interface Subscribable {
   name: string;
   address: string;
+  enabledNotifications?: {
+    sent?: boolean;
+    received?: boolean;
+  };
 }
 
 export interface SubscriberConfig {
