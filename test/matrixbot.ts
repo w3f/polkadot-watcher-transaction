@@ -24,10 +24,10 @@ const expectedSentAlertname = 'TransactionSent';
 const expectedReceivedMessage = `Finalization confirmation: new transaction received in account ${receiverName}, check https://polkascan.io/${networkId}/transaction/${txHash} for details`;
 const expectedReceivedAlertname = 'TransactionReceived';
 
-const expectedBalanceDecreasedMessage = `New transaction sent from account ${senderName}, check https://polkascan.io/pre/${networkId}/account/${senderAddress}#transactions for details. A finalization confirmation should arrive soon...`;
+const expectedBalanceDecreasedMessage = `New transaction sent from account ${senderName}, check https://polkascan.io/pre/${networkId}/account/${senderAddress}#transactions for details.`;
 const expectedBalanceDecreasedAlertname = 'BalanceDecreased';
 
-const expectedBalanceIncreasedMessage = `New transaction received in account ${receiverName}, check https://polkascan.io/pre/${networkId}/account/${receiverAddress}#transactions for details. A finalization confirmation should arrive soon...`;
+const expectedBalanceIncreasedMessage = `New transaction received in account ${receiverName}, check https://polkascan.io/pre/${networkId}/account/${receiverAddress}#transactions for details.`;
 const expectedBalanceIncreasedAlertname = 'BalanceIncreased';
 
 const mockRestNotifier = (alertname: string, message: string): void => {
