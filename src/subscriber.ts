@@ -5,8 +5,7 @@ import { Text } from '@polkadot/types/primitive';
 import {
     InputConfig, TransactionData, TransactionType, Notifier, FreeBalance, SubscriberConfig,
 } from './types';
-import { Header } from '@polkadot/types/interfaces';
-import Extrinsic from '@polkadot/types/extrinsic/Extrinsic';
+import { Extrinsic, Header } from '@polkadot/types/interfaces';
 import { asyncForEach, isTransferBalancesExtrinsic } from './utils';
 import { ZeroBalance } from './constants';
 
@@ -66,6 +65,12 @@ export class Subscriber {
 
     private _initAPI = async (): Promise<void> =>{
         const provider = new WsProvider(this.endpoint);
+        provider.on('error', error => {
+          if(this.api == undefined) {
+            this.logger.error(JSON.stringify("initAPI error:"+JSON.stringify(error)))
+            process.exit(1)
+          }
+        })
         this.api = await ApiPromise.create({ provider });
         
         this.chain = await this.api.rpc.system.chain();
