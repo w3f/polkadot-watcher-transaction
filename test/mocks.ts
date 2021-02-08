@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import Extrinsic from '@polkadot/types/extrinsic/Extrinsic';
 import { Logger } from '@w3f/logger';
 import { Client, Keyring } from '@w3f/polkadot-api-client';
 import { Notifier, TransactionData } from '../src/types';
 import { initClient, sendFromAToB } from './utils';
 import { TestPolkadotRPC } from '@w3f/test-utils';
+import { Extrinsic } from '@polkadot/types/interfaces';
 
 const delay = (ms: number): Promise<void> =>{
   return new Promise( resolve => setTimeout(resolve, ms) );

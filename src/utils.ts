@@ -1,7 +1,7 @@
 import fs, { WriteStream } from 'fs';
 import { Logger } from '@w3f/logger';
 import { DeriveAccountRegistration } from '@polkadot/api-derive/accounts/types';
-import Extrinsic from '@polkadot/types/extrinsic/Extrinsic';
+import { Extrinsic } from '@polkadot/types/interfaces';
 
 export const isDirEmpty = (path: string): boolean =>{
   return fs.readdirSync(path).length === 0
