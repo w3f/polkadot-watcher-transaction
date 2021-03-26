@@ -24,3 +24,7 @@ export const sendFromAToB = async (AUri: string, BUri: string, keyring: Keyring,
 
   await client.send(ks, B.address, toSend as Balance, isKeepAliveForced)
 }
+
+export const delay = (ms: number): Promise<void> =>{
+  return new Promise( resolve => setTimeout(resolve, ms) );
+}
