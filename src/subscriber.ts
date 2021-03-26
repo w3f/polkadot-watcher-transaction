@@ -1,17 +1,13 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import { Text } from '@polkadot/types/primitive';
-
 import {
-    InputConfig, TransactionData, TransactionType, Notifier, FreeBalance, SubscriberConfig,
+    InputConfig, Notifier, SubscriberConfig
 } from './types';
-import { Extrinsic, Header } from '@polkadot/types/interfaces';
-import { asyncForEach, isTransferBalancesExtrinsic } from './utils';
-import { ZeroBalance } from './constants';
-
-interface InitializedMap {
-  [name: string]: boolean;
-}
+import { EventBased } from './subscriptionModules/eventBased';
+import { BalanceChangeBased } from './subscriptionModules/balanceChangeBased';
+import { BlockBased } from './subscriptionModules/blockBased';
+import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
 
 export class Subscriber {
     private chain: Text;
@@ -19,10 +15,11 @@ export class Subscriber {
     private networkId: string;
     private endpoint: string;
     private logLevel: string;
+    private config: SubscriberConfig;
 
-    private subscribe: SubscriberConfig;
-    private subscriptions: Map<string,string>
-    private initializedBalanceSubscriptions: InitializedMap = {};
+    private blockBased: BlockBased;
+    private balanceChangeBased: BalanceChangeBased;
+    private eventBased: EventBased;
     
     constructor(
         cfg: InputConfig,
@@ -31,36 +28,22 @@ export class Subscriber {
         this.endpoint = cfg.endpoint;
         this.logLevel = cfg.logLevel;
 
-        this._initSubscribe(cfg)
-        this._initSubscriptions(cfg)
-        this._initBalanceSubscriptions(cfg)
+        this._initSubscriberConfig(cfg)
     }
 
-    private _initSubscribe = (cfg): void => {
-      this.subscribe = cfg.subscribe
-    }
-
-    private _initSubscriptions = (cfg): void => {
-      this.subscriptions = new Map<string,string>()
-      for (const subscription of cfg.subscribe.transactions) {
-        this.subscriptions.set(subscription.address,subscription.name)
-      }
-    }
-
-    private _initBalanceSubscriptions = (cfg): void => {
-      for (const subscription of cfg.subscribe.transactions) {
-        this.initializedBalanceSubscriptions[subscription.name] = false;
-      }
+    private _initSubscriberConfig = (cfg: InputConfig): void => {
+      this.config = cfg.subscriber
     }
 
     public start = async (): Promise<void> => {
         await this._initAPI();
+        this._initModules()
 
         if(this.logLevel === 'debug') await this._triggerDebugActions()
 
-        false && await this._handleNewHeadSubscriptions(); //DISABLED
-        await this._handleAccountBalanceSubscription()
-
+        this.config.modules?.transferExtrinsic?.enabled != false && this.blockBased.subscribe()
+        this.config.modules?.balanceChange?.enabled != false && this.balanceChangeBased.subscribe()
+        this.config.modules?.transferEvent?.enabled != false && this.eventBased.subscribe();
     }
 
     private _initAPI = async (): Promise<void> =>{
@@ -88,142 +71,19 @@ export class Subscriber {
       this.logger.debug('debug mode active')
     }
 
-    private async _handleAccountBalanceSubscription(): Promise<void> {
-        const freeBalance: FreeBalance = {};
-        await asyncForEach(this.subscribe.transactions, async (account) => {
-            const { data: { free: previousFree } } = await this.api.query.system.account(account.address);
-            freeBalance[account.address] = previousFree;
-            await this.api.query.system.account(account.address, async (acc) => {
-                const nonce = acc.nonce;
-                this.logger.info(`The nonce for ${account.name} is ${nonce}`);
-                const currentFree = acc.data.free;
-
-                if (this.initializedBalanceSubscriptions[account.name]) {
-                    const data: TransactionData = {
-                        name: account.name,
-                        address: account.address,
-                        networkId: this.networkId
-                    };
-
-                    const enabledNotifications = {
-                        sent: account.enabledNotifications && account.enabledNotifications.sent != undefined ? account.enabledNotifications.sent : true,
-                        received: account.enabledNotifications && account.enabledNotifications.received != undefined ? account.enabledNotifications.received : true
-                    }
-                    let isNotificationEnabled = true
-
-                    // check if the action was performed by the account or externally
-                    const change = currentFree.sub(freeBalance[account.address]);
-                    if (!change.gt(ZeroBalance)) {
-                        this.logger.info(`Action performed from account ${account.name}`);
-
-                        data.txType = TransactionType.Sent;
-                        isNotificationEnabled = enabledNotifications.sent
-                    } else {
-                        this.logger.info(`Transfer received in account ${account.name}`);
-
-                        data.txType = TransactionType.Received;
-                        isNotificationEnabled = enabledNotifications.received
-                    }
-
-                    freeBalance[account.address] = currentFree;
-
-                    if(isNotificationEnabled){
-                      await this._notifyNewBalanceChange(data)
-                    }  
-                } else {
-                    this.initializedBalanceSubscriptions[account.name] = true;
-                }
-            });
-        });
-    }
-
-    private _handleNewHeadSubscriptions = async (): Promise<void> =>{
-
-      this.api.rpc.chain.subscribeFinalizedHeads(async (header) => {
-       
-        await this._blocksHandler(header)
-
-      })
-    }
-
-    private _blocksHandler = async (header: Header): Promise<void> =>{
-
-      const hash = header.hash.toHex()
-      const block = await this.api.rpc.chain.getBlock(hash)
-      this.logger.debug(`block:`)
-      this.logger.debug(JSON.stringify(block))
-
-      block.block.extrinsics.forEach( async (extrinsic) => {
-
-        this._transferBalancesExtrinsicHandler(extrinsic, hash)
-  
-      })
-
-    }
-
-    
-
-    private _transferBalancesExtrinsicHandler = async (extrinsic: Extrinsic, blockHash: string): Promise<boolean> =>{
-      let isNewNotificationTriggered = false
-      if(!isTransferBalancesExtrinsic(extrinsic)) return isNewNotificationTriggered
-      this.logger.debug(`received new transfer balances`)
-
-      const { signer, method: { args } } = extrinsic;
-      const sender = signer.toString()
-      const receiver = args[0].toString()
-      const unit = args[1].toString()
-      const transactionHash = extrinsic.hash.toHex()
-      this.logger.debug(`\nsender: ${sender}\nreceiver: ${receiver}\nunit: ${unit}\nblockHash: ${blockHash}\ntransactionHash: ${transactionHash}`)
-
-      if(this.subscriptions.has(sender)){
-        const data: TransactionData = {
-          name: this.subscriptions.get(sender),
-          address: sender,
-          networkId: this.networkId,
-          txType: TransactionType.Sent,
-          hash: transactionHash
-        };
-
-        this.logger.info(`notification to be sent:`)
-        this.logger.info(JSON.stringify(data))
-        this._notifyNewTransaction(data)
-        isNewNotificationTriggered = true
+    /*to agevolate the tests*/
+    private _initModules = (): void => {
+      const subscriptionModuleConfig: SubscriptionModuleConstructorParams = {
+        api: this.api,
+        networkId: this.networkId,
+        notifier: this.notifier,
+        config: this.config,
+        logger: this.logger
       }
 
-      if(this.subscriptions.has(receiver)){
-        const data: TransactionData = {
-          name: this.subscriptions.get(receiver),
-          address: receiver,
-          networkId: this.networkId,
-          txType: TransactionType.Received,
-          hash: transactionHash
-        };
-        
-        this.logger.info(`notification to be sent:`)
-        this.logger.info(JSON.stringify(data))
-        await this._notifyNewTransaction(data)
-        isNewNotificationTriggered = true
-      }
-      
-      return isNewNotificationTriggered
+      this.blockBased = new BlockBased(subscriptionModuleConfig)
+      this.balanceChangeBased = new BalanceChangeBased(subscriptionModuleConfig)
+      this.eventBased = new EventBased(subscriptionModuleConfig)
     }
 
-    private _notifyNewTransaction = async (data: TransactionData): Promise<void> => {
-      try {
-        await this.notifier.newTransaction(data);
-      } catch (e) {
-          this.logger.error(`could not notify transaction: ${e.message}`);
-      }
-    }
-
-    private _notifyNewBalanceChange = async (data: TransactionData): Promise<void> => {
-      try {
-        this.logger.info(`notification to be sent:`)
-        this.logger.info(JSON.stringify(data))
-        await this.notifier.newBalanceChange(data);
-      } catch (e) {
-          this.logger.error(`could not notify balance change: ${e.message}`);
-      }
-    }
- 
 }

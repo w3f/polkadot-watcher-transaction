@@ -14,6 +14,7 @@ const delay = (ms: number): Promise<void> =>{
 export class NotifierMock implements Notifier{
     private _receivedTransactions: Array<TransactionData> = [];
     private _receivedBalanceChanges: Array<TransactionData> = [];
+    private _receivedTransferEvent: Array<TransactionData> = [];
 
     get receivedTransactions(): Array<TransactionData> {
         return this._receivedTransactions;
@@ -33,9 +34,15 @@ export class NotifierMock implements Notifier{
       return "";
     }
 
+    newTransfer = async (data: TransactionData): Promise<string> =>{
+      this._receivedTransferEvent.push(data);
+      return "";
+    }
+
     resetReceivedData = (): void =>{
         this._receivedTransactions = [];
         this._receivedBalanceChanges = [];
+        this._receivedTransferEvent = [];
     }
 }
 

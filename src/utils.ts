@@ -1,7 +1,8 @@
 import fs, { WriteStream } from 'fs';
 import { Logger } from '@w3f/logger';
 import { DeriveAccountRegistration } from '@polkadot/api-derive/accounts/types';
-import { Extrinsic } from '@polkadot/types/interfaces';
+import { Extrinsic, Event, Balance } from '@polkadot/types/interfaces';
+import { SubscriptionModuleConfig, TransferInfo } from './types';
 
 export const isDirEmpty = (path: string): boolean =>{
   return fs.readdirSync(path).length === 0
@@ -76,4 +77,33 @@ export const asyncForEach = async < T extends {} > (array: Array<T>, callback: (
 export const isTransferBalancesExtrinsic = (extrinsic: Extrinsic): boolean => {
   const { method: { method, section } } = extrinsic;
   return section == 'balances' && ( method == 'transfer' || method == 'transferKeepAlive' )
+}
+
+export const isBalanceTransferEvent = (event: Event): boolean => {
+  //https://polkadot.js.org/docs/substrate/events#transferaccountid-accountid-balance
+  const { method, section } = event;
+  return section == 'balances' && method == 'Transfer';
+}
+
+export const extractTransferInfoFromEvent = (event: Event): TransferInfo =>{
+  const from = event.data[0].toString()
+  const to = event.data[1].toString()
+  const amount = event.data[2] as unknown as Balance
+
+  return {from,to,amount}
+}
+
+export const getSubscriptionNotificationConfig = (config: SubscriptionModuleConfig, configSpecific: SubscriptionModuleConfig): {sent: boolean; received: boolean} => {
+  /*
+  Specific config is the most prioritized
+  */
+  const defaultSent = true
+  const defaultReceived = true
+  const defaultModuleSent = config?.sent == false ? false : defaultSent
+  const defaultModuleReceived = config?.received == false ? false : defaultReceived
+  const enabledNotifications = {
+      sent: configSpecific?.sent == false ? false : defaultModuleSent,
+      received: configSpecific?.received == false ? false : defaultModuleReceived
+  }
+  return enabledNotifications
 }

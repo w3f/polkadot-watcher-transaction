@@ -15,38 +15,38 @@ should();
 let keyring: Keyring;
 
 const cfg = {
-    logLevel: 'info',
+    logLevel: 'debug',
     port: 3000,
     endpoint: 'some_endpoint',
     matrixbot: {
         endpoint: 'some_endpoint'
     },
-    subscribe: {
-        transactions: [{
+    subscriber: {
+      subscriptions: [{
             name: 'Alice',
-            address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
+            address: 'HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F'
         },
         {
             name: 'Bob',
-            address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'
+            address: 'FoQJpPyadYccjavVdTWxpxU7rUEaYhfLCPwXgkfD6Zat9QP'
         }]
     }
 };
 
 const cfg2 = {
   ...cfg,
-  subscribe: {
-      transactions: [{
+  subscriber: {
+    subscriptions: [{
           name: 'Alice',
-          address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-          enabledNotifications: {
+          address: 'HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F',
+          balanceChange: {
             sent: false
           }
       },
       {
           name: 'Bob',
-          address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
-          enabledNotifications: {
+          address: 'FoQJpPyadYccjavVdTWxpxU7rUEaYhfLCPwXgkfD6Zat9QP',
+          balanceChange: {
             received: false
           }
       }]
@@ -144,7 +144,7 @@ describe('Subscriber', () => {
           it('is not transferBalances extrinsic', async () => {
               const extrinsic = await extrinsicMock.generateNonTransferExtrinsic()
 
-              const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
+              const isNewNotificationTriggered = await subject["blockBased"]["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
 
               isNewNotificationTriggered.should.be.false
           });
@@ -152,7 +152,7 @@ describe('Subscriber', () => {
           it('is transferBalances extrinsic, but our addresses are not involved', async () => {
               const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Charlie','//Dave')
 
-              const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
+              const isNewNotificationTriggered = await subject["blockBased"]["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
 
               isNewNotificationTriggered.should.be.false
           });
@@ -160,7 +160,7 @@ describe('Subscriber', () => {
           it('is transferBalances extrinsic 1', async () => {
               const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Alice','//Bob')
 
-              const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
+              const isNewNotificationTriggered = await subject["blockBased"]["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
 
               isNewNotificationTriggered.should.be.true
           });
@@ -168,7 +168,7 @@ describe('Subscriber', () => {
           it('is transferBalances extrinsic 2', async () => {
             const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Bob','//Alice')
 
-            const isNewNotificationTriggered = await subject["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
+            const isNewNotificationTriggered = await subject["blockBased"]["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
 
             isNewNotificationTriggered.should.be.true
           });
@@ -197,4 +197,5 @@ describe('Subscriber', () => {
         });
     });
   });
+
 });
