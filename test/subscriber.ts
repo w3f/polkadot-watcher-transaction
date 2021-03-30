@@ -8,7 +8,10 @@ import {
     NotifierMock,
 } from './mocks';
 import { TransactionType } from '../src/types';
-import { delay, initClient, sendFromAToB  } from './utils';
+import { initClient, sendFromAToB  } from './utils';
+import { Cache } from '../src/cache';
+import { CacheDelay } from '../src/constants';
+import { delay } from '../src/utils';
 
 should();
 
@@ -136,7 +139,7 @@ describe('Subscriber', () => {
       before(async () => {
           nt = new NotifierMock();
           cfg.endpoint = testRPC.endpoint();
-          subject = new Subscriber(cfg, nt, logger);
+          subject = new Subscriber(cfg, nt, new Cache(logger), logger);
           await subject.start();
       });
 
@@ -162,10 +165,10 @@ describe('Subscriber', () => {
             const isNewNotificationTriggered = await subject["eventBased"]["_balanceTransferHandler"](event)
 
             isNewNotificationTriggered.should.be.false
-            await(delay(3000))
         });
 
         it('is transferBalances event 1', async () => {
+            await delay(CacheDelay*4)
             const event = await extrinsicMock.generateTransferEvent('//Alice','//Bob')
 
             const isNewNotificationTriggered = await subject["eventBased"]["_balanceTransferHandler"](event)
@@ -174,6 +177,7 @@ describe('Subscriber', () => {
         });
 
         it('is transferBalances event 2', async () => {
+          await delay(CacheDelay*4)
           const event = await extrinsicMock.generateTransferEvent('//Bob','//Alice')
 
           const isNewNotificationTriggered = await subject["eventBased"]["_balanceTransferHandler"](event)
@@ -224,7 +228,7 @@ describe('Subscriber', () => {
         nt = new NotifierMock();
         const cfg = cfg2
         cfg.endpoint = testRPC.endpoint();
-        const subject = new Subscriber(cfg, nt, logger);
+        const subject = new Subscriber(cfg, nt, new Cache(logger), logger);
         await subject.start();
     });
 

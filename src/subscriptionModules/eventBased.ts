@@ -6,6 +6,7 @@ import {
 import { Event } from '@polkadot/types/interfaces';
 import { extractTransferInfoFromEvent, getSubscriptionNotificationConfig, isBalanceTransferEvent } from '../utils';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
+import { Cache } from '../cache';
 
 export class EventBased implements ISubscriptionModule{
 
@@ -16,7 +17,7 @@ export class EventBased implements ISubscriptionModule{
     private readonly config: SubscriberConfig
     private readonly logger: Logger
     
-    constructor(params: SubscriptionModuleConstructorParams) {
+    constructor(params: SubscriptionModuleConstructorParams, private readonly cache: Cache) {
       this.api = params.api
       this.networkId = params.networkId
       this.notifier = params.notifier
@@ -63,10 +64,18 @@ export class EventBased implements ISubscriptionModule{
 
       let isNewNotificationTriggered = false
 
+      if(this.cache.isTransferEventPresent(transferInfo)){
+        this.logger.debug(`A duplicated event is being skipped...`)
+        return false
+      }
+      if(this.subscriptions.has(from) || this.subscriptions.has(to)){
+        this.cache.addTransferEvent(transferInfo)
+      }
+
       if(this.subscriptions.has(from)){
         const data: TransactionData = {
           name: this.subscriptions.get(from).name,
-          address: to,
+          address: from,
           networkId: this.networkId,
           txType: TransactionType.Sent,
           amount: amount
@@ -76,7 +85,7 @@ export class EventBased implements ISubscriptionModule{
 
         if(notificationConfig.sent){
           this.logger.info(`Balances Transfer Event from ${from} detected`)
-          this._notifyNewTransfer(data)
+          await this._notifyNewTransfer(data)
           isNewNotificationTriggered = true
         }
         else{

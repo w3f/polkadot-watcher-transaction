@@ -29,22 +29,22 @@ const MsgTemplate = {
 export class Matrixbot implements Notifier {
     constructor(private readonly endpoint: string) { }
 
-    newTransaction = (data: TransactionData): Promise<string> =>{
+    newTransaction = async (data: TransactionData): Promise<string> =>{
         const json = this._transactionMsg(data);
 
-        return this._send(json);
+        return await this._send(json);
     }
 
-    newBalanceChange = (data: TransactionData): Promise<string> =>{
+    newBalanceChange = async (data: TransactionData): Promise<string> =>{
       const json = this._balanceChangeMsg(data);
-
-      return this._send(json);
+      
+      return await this._send(json);
     }
 
-    newTransfer = (data: TransactionData): Promise<string> =>{
+    newTransfer = async (data: TransactionData): Promise<string> =>{
       const json = this._transferMsg(data);
 
-      return this._send(json);
+      return await this._send(json);
     }
 
     private _transactionMsg = (data: TransactionData): MatrixbotMsg =>{

@@ -8,6 +8,7 @@ import { EventBased } from './subscriptionModules/eventBased';
 import { BalanceChangeBased } from './subscriptionModules/balanceChangeBased';
 import { BlockBased } from './subscriptionModules/blockBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
+import { Cache } from './cache';
 
 export class Subscriber {
     private chain: Text;
@@ -24,6 +25,7 @@ export class Subscriber {
     constructor(
         cfg: InputConfig,
         private readonly notifier: Notifier,
+        private readonly cache: Cache,
         private readonly logger: Logger) {
         this.endpoint = cfg.endpoint;
         this.logLevel = cfg.logLevel;
@@ -83,7 +85,7 @@ export class Subscriber {
 
       this.blockBased = new BlockBased(subscriptionModuleConfig)
       this.balanceChangeBased = new BalanceChangeBased(subscriptionModuleConfig)
-      this.eventBased = new EventBased(subscriptionModuleConfig)
+      this.eventBased = new EventBased(subscriptionModuleConfig,this.cache)
     }
 
 }

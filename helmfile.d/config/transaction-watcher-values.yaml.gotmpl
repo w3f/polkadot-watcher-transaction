@@ -1,14 +1,67 @@
 environment: {{ .Environment.Name }}
 
-{{ if eq .Environment.Name "ci" }}
-image:
-  tag: {{ env "CIRCLE_SHA1" | default "kind" }}
-{{ else if eq .Environment.Name "local" }}
-image:
-  repo: localhost:5000/polkadot-watcher-transaction
-  tag: latest
-{{ end }}
-
 config:
+  endpoint: "ws://rpc-node-base-services-external-websockets.kusama:9944"
   port: 3000
-  logLevel: debug  
+  logLevel: debug
+  matrixbot:
+    endpoint: "http://finance-watcher-matrixbot:8080/skill/eventmanager/webhook"
+  subscriber:
+    modules:
+      transferEvent:
+        enabled: true
+      balanceChange:
+        enabled: true
+        received: true
+        sent: true
+      transferExtrinsic:
+        enabled: false
+    subscriptions:
+    - name: "/ksm/0"
+      address: "F7uBbx4pbZ5u7eRGPExD6SKSA6TVqTsLf7daXYjAeEChcEY"
+    - name: "/ksm/1"
+      address: "Cr9qKTCDWHkD9ALjdgain8QsBpCAqK6uVwB13FVoF8c7hKV"
+    - name: "/ksm/2"
+      address: "H2VEWnobNUd7KzW6NSpjg4XkCDxPGC5iAmJeZxV1Ly8kdnV"
+    - name: "/ksm/3"
+      address: "EwdN9ycz5ocDZLx1BYKSWQsKPcaQeUmk7oD5EWrmqRpgwAN"
+    - name: "/ksm/4 nominator"
+      address: "EMdZSpRK9J79QhPHhxX9Lw1CEPjh48FTvrJHVswmcRf36sa"
+    - name: "/ksm/5 nominator"
+      address: "FAc4fT16twXNwC445h515QZeroQZMLepEoBGQQyXXUk2kss"
+    - name: "/ksm/6 nominator"
+      address: "DwLMq1N58iXVfteqCEVdXyZcV92iokKJA7eH13dLbHqwWoZ"
+    - name: "/ksm/7 thousand validator nominator"
+      address: "HvjTdaroboixQBrqycqwtk52WDjKsZjamr8oBxUDJbpmyFV"
+    - name: "Sample Distribution"
+      address: "GfLwUrzdTCMbkEyTgMWsUCk8nHde1Hb4GBHf8sPA7CwEg7t"
+    - name: "sudo"
+      address: "EDHz5PdjufWNnd23oyRDfHR8m833KmxggJjaR7edYm9nuzM"
+    - name: "Kusama Stash /w3f/1"
+      address: "ETpkwxhXhVjrKhzZFtYBRW86H5pUXU33DdovbpehyuKc5Hc"
+    - name: "Kusama Stash /w3f/2"
+      address: "Gh5DVXDzW3qAZQMTmiMvinYyr4ArVtiKbU8XEVZKnZLXRHn"
+    - name: "Kusama Stash /w3f/3"
+      address: "JBxU1hXXZqUttDnRnwFTznuFJ5uVsmigNGhc9yzcUvjQmAz"
+    - name: "Kusama Stash /w3f/4"
+      address: "DwdYSHmoFA7NCYmMSGvGPvbt4NMSHQbWc72imZJq5uitDtn"
+    - name: "Kusama Stash /w3f/5"
+      address: "GAKKFnmgZoZioir2zp6bjDBxhqmo3ZZWAnzmA3DtjYrbVLS"
+    - name: "Kusama Stash /w3f/6"
+      address: "GSQduBLcmQxzDRuzz68egaVrRojcdLDjdLPr61tEEUBq5HT"
+    - name: "Kusama Stash /w3f/7"
+      address: "FyQ35Hs5gyHHQ1iGKVF8D4ZuDWub2QN1ApWFVSDjUoSz1us"
+    - name: "Kusama Stash /w3f/8"
+      address: "EbznNJUyHymcZtsBip5YUUvQc1Pa9kDeZukWUinjjienuG2"
+    - name: "Kusama Stash /w3f/9"
+      address: "F7hruXUnE2F2WYNwMShrMisfqjTysMjyRpfkENo5HyUHfi7"
+    - name: "Hot Multisig"
+      address: "HHce4wuYSZJopP62BUN2PL34qzNUiPiA5RvSyxyGKtUK7WF"
+    - name: "AleController"
+      address: "Dz3PKiU68ErQ6zXbrSPVbQHQi5kPgKHZX1G6j4aJeXWDikz"
+    - name: "AleStash"
+      address: "GaK38GT7LmgCpRSTRdDC2LeiMaV9TJmx8NmQcb9L3cJ3fyX" 
+    - name: "AleTest1"
+      address: "GeRh9xeJ7eTpwYkhnautsTmoFFSzv4XnaQZYtZ33RnUvMbT"    
+    - name: "AleTest2"
+      address: "H1cC8p6RGd21HgmhmGw89vqyQNKvNFLsvFzxwWgbLSAR3b5"    

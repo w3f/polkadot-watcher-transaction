@@ -3,8 +3,8 @@ import { Logger } from '@w3f/logger';
 import {
     TransactionData, TransactionType, Notifier, FreeBalance, SubscriberConfig
 } from '../types';
-import { asyncForEach, getSubscriptionNotificationConfig } from '../utils';
-import { ZeroBalance } from '../constants';
+import { asyncForEach, delay, getSubscriptionNotificationConfig } from '../utils';
+import { DelayBalanceDecrease, DelayBalanceIncrease, ZeroBalance } from '../constants';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 
 interface InitializedMap {
@@ -66,6 +66,9 @@ export class BalanceChangeBased implements ISubscriptionModule{
                         if(notificationConfig.sent){
                           this.logger.info(`Balances Change Decrease on account ${subscription.name} detected`)
                           data.txType = TransactionType.Sent;
+                          /**** to fix a bug on the receiver side, the matrixbot... ***/
+                          await delay(DelayBalanceDecrease)
+                          /************************************************************/
                           await this._notifyNewBalanceChange(data)
                         }
                         else{
@@ -75,6 +78,9 @@ export class BalanceChangeBased implements ISubscriptionModule{
                         if(notificationConfig.received){
                           this.logger.info(`Balances Change Increase on account ${subscription.name} detected`);
                           data.txType = TransactionType.Received;
+                          /**** to fix a bug on the receiver side, the matrixbot... ***/
+                          await delay(DelayBalanceIncrease)
+                          /************************************************************/
                           await this._notifyNewBalanceChange(data)        
                         }
                         else{

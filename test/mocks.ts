@@ -4,10 +4,10 @@
 import { Logger } from '@w3f/logger';
 import { Client, Keyring } from '@w3f/polkadot-api-client';
 import { Notifier, TransactionData } from '../src/types';
-import { delay, initClient, sendFromAToB } from './utils';
+import { initClient, sendFromAToB } from './utils';
 import { TestPolkadotRPC } from '@w3f/test-utils';
 import { Extrinsic } from '@polkadot/types/interfaces';
-import { isBalanceTransferEvent } from '../src/utils';
+import { delay, isBalanceTransferEvent } from '../src/utils';
 import { Event } from '@polkadot/types/interfaces';
 
 export class NotifierMock implements Notifier{
