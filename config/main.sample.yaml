@@ -16,7 +16,7 @@ subscriber:
   subscriptions:
   - name: faucet
     address: Edyfdyoi4KJVdXUJ3SU3nuZYMpg13HHa1SWYtPDCV8UPdxy 
-  - name: faucet2
-    address: Cb2QccEAM38pjwmcHHTTuTukUobTHwhakKH4kBo4k8Vur8o   
+  - name: myAddress
+    address: GaK38GT7LmgCpRSTRdDC2LeiMaV9TJmx8NmQcb9L3cJ3fyX   
     balanceChange:
       received: false 
