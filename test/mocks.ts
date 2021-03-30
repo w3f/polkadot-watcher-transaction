@@ -7,24 +7,28 @@ import { Notifier, TransactionData } from '../src/types';
 import { initClient, sendFromAToB } from './utils';
 import { TestPolkadotRPC } from '@w3f/test-utils';
 import { Extrinsic } from '@polkadot/types/interfaces';
+import { delay, isBalanceTransferEvent } from '../src/utils';
+import { Event } from '@polkadot/types/interfaces';
 
-const delay = (ms: number): Promise<void> =>{
-  return new Promise( resolve => setTimeout(resolve, ms) );
-}
 export class NotifierMock implements Notifier{
-    private _receivedTransactions: Array<TransactionData> = [];
+    private _receivedTransactionsExtrinsic: Array<TransactionData> = [];
     private _receivedBalanceChanges: Array<TransactionData> = [];
+    private _receivedTransferEvents: Array<TransactionData> = [];
 
-    get receivedTransactions(): Array<TransactionData> {
-        return this._receivedTransactions;
+    get receivedTransactionsExtrinsic(): Array<TransactionData> {
+        return this._receivedTransactionsExtrinsic;
     }
 
     get receivedBalanceChanges(): Array<TransactionData> {
       return this._receivedBalanceChanges;
     }
 
+    get receivedTransactionEvents(): Array<TransactionData> {
+      return this._receivedTransferEvents;
+    }
+
     newTransaction = async (data: TransactionData): Promise<string> =>{
-        this._receivedTransactions.push(data);
+        this._receivedTransactionsExtrinsic.push(data);
         return "";
     }
 
@@ -33,9 +37,15 @@ export class NotifierMock implements Notifier{
       return "";
     }
 
+    newTransfer = async (data: TransactionData): Promise<string> =>{
+      this._receivedTransferEvents.push(data);
+      return "";
+    }
+
     resetReceivedData = (): void =>{
-        this._receivedTransactions = [];
+        this._receivedTransactionsExtrinsic = [];
         this._receivedBalanceChanges = [];
+        this._receivedTransferEvents = [];
     }
 }
 
@@ -103,6 +113,39 @@ export class ExtrinsicMock {
 
     while(!result){
       this.logger.info(`waiting for a ${expectedMethod} Extrinsic (${checkLogic}) to be produced ...`)
+      await(delay(3000))
+    }
+    await(delay(3000))
+    unsubscribe()
+    
+    return result  
+  }
+
+  generateTransferEvent = async (AUri: string, BUri: string): Promise<Event> =>{
+    sendFromAToB(AUri,BUri,this.keyring,this.client,true)
+    return await this.getEvent()
+  }
+
+  private getEvent = async (): Promise<Event> =>{
+    let result: Event
+
+    const api = await this.client.api()
+
+    const unsubscribe = await api.query.system.events((events) => {
+
+      events.forEach(async (record) => {
+        const { event } = record;
+
+        if (isBalanceTransferEvent(event)) {
+          unsubscribe()
+          result = event
+        }
+
+      })
+    })
+
+    while(!result){
+      this.logger.info(`waiting for a Transfer Event to be produced ...`)
       await(delay(3000))
     }
     await(delay(3000))

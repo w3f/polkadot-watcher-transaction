@@ -29,28 +29,35 @@ const MsgTemplate = {
 export class Matrixbot implements Notifier {
     constructor(private readonly endpoint: string) { }
 
-    newTransaction = (data: TransactionData): Promise<string> =>{
+    newTransaction = async (data: TransactionData): Promise<string> =>{
         const json = this._transactionMsg(data);
 
-        return this._send(json);
+        return await this._send(json);
     }
 
-    newBalanceChange = (data: TransactionData): Promise<string> =>{
+    newBalanceChange = async (data: TransactionData): Promise<string> =>{
       const json = this._balanceChangeMsg(data);
+      
+      return await this._send(json);
+    }
 
-      return this._send(json);
-  }
+    newTransfer = async (data: TransactionData): Promise<string> =>{
+      const json = this._transferMsg(data);
+
+      return await this._send(json);
+    }
 
     private _transactionMsg = (data: TransactionData): MatrixbotMsg =>{
+        //TODO: this functionality is not ready to be used
         const msg = { ...MsgTemplate };
 
         let description: string;
         let alertname: string;
         if (data.txType === TransactionType.Sent) {
-            description = `Finalization confirmation: new transaction sent from account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
+            description = `Finalization confirmation: new transaction sent from the account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
             alertname = 'TransactionSent';
         } else {
-            description = `Finalization confirmation: new transaction received in account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
+            description = `Finalization confirmation: new transaction received in the account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
             alertname = 'TransactionReceived';
         }
         msg.alerts[0].labels.alertname = alertname;
@@ -61,22 +68,38 @@ export class Matrixbot implements Notifier {
     private _balanceChangeMsg = (data: TransactionData): MatrixbotMsg =>{
       const msg = { ...MsgTemplate };
 
-      let description: string;
+      const description = `New Balance Change detected (i.e. staking rewards, transfers, ...) for the account ${data.name}, check https://${data.networkId}.subscan.io/account/${data.address}?tab=reward for details.`;
       let alertname: string;
       if (data.txType === TransactionType.Sent) {
-          description = `New transaction sent from account ${data.name}, check https://polkascan.io/pre/${data.networkId}/account/${data.address}#transactions for details.`;
           alertname = 'BalanceDecreased';
       } else {
-          description = `New transaction received in account ${data.name}, check https://polkascan.io/pre/${data.networkId}/account/${data.address}#transactions for details.`;
           alertname = 'BalanceIncreased';
       }
       msg.alerts[0].labels.alertname = alertname;
       msg.alerts[0].annotations.description = description;
       return msg;
-  }
+    }
+
+    private _transferMsg = (data: TransactionData): MatrixbotMsg =>{
+      const msg = { ...MsgTemplate };
+
+      let description: string;
+      let alertname: string;
+      if (data.txType === TransactionType.Sent) {
+          description = `New Transfer of ${data.amount.toHuman()} sent from the account ${data.name}, check https://${data.networkId}.subscan.io/account/${data.address}?tab=transfer for details.`;
+          alertname = 'TransferSent';
+      } else {
+          description = `New Transfer of ${data.amount.toHuman()} received in the account ${data.name}, check https://${data.networkId}.subscan.io/account/${data.address}?tab=transfer for details.`;
+          alertname = 'TransferReceived';
+      }
+      msg.alerts[0].labels.alertname = alertname;
+      msg.alerts[0].annotations.description = description;
+      return msg;
+    }
 
     private _send = async (json: MatrixbotMsg): Promise<string> =>{
         const result = await got.post(this.endpoint, { json });
         return result.body;
     }
+
 }

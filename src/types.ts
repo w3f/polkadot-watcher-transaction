@@ -4,21 +4,31 @@ export interface InputConfig {
     logLevel: string;
     port: number;
     endpoint: string;
-    subscribe: SubscriberConfig;
+    subscriber: SubscriberConfig;
     matrixbot: MatrixbotConfig;
 }
 
 export interface Subscribable {
   name: string;
   address: string;
-  enabledNotifications?: {
-    sent?: boolean;
-    received?: boolean;
-  };
+  transferEvent?: SubscriptionModuleConfig;
+  balanceChange?: SubscriptionModuleConfig;
+  transferExtrinsic?: SubscriptionModuleConfig;
+}
+
+export interface SubscriptionModuleConfig {
+  enabled?: boolean;
+  sent?: boolean;
+  received?: boolean;
 }
 
 export interface SubscriberConfig {
-  transactions: Array<Subscribable>;
+  subscriptions: Array<Subscribable>;
+  modules?: {
+    transferEvent?: SubscriptionModuleConfig;
+    balanceChange?: SubscriptionModuleConfig;
+    transferExtrinsic?: SubscriptionModuleConfig;
+  };
 }
 
 export interface MatrixbotConfig {
@@ -38,6 +48,13 @@ export interface TransactionData extends Subscribable {
   txType?: TransactionType;
   networkId: string;
   hash?: string;
+  amount?: Balance;
+}
+
+export interface TransferInfo {
+  from: string;
+  to: string;
+  amount: Balance;
 }
 
 export interface InitializedMap {
@@ -47,6 +64,7 @@ export interface InitializedMap {
 export interface Notifier {
   newTransaction(data: TransactionData): Promise<string>;
   newBalanceChange(data: TransactionData): Promise<string>;
+  newTransfer(data: TransactionData): Promise<string>;
 }
 
 interface LabelMap {
@@ -70,4 +88,3 @@ export interface MatrixbotMsg {
   alerts: Array<Alert>;
   version: string;
 }
-

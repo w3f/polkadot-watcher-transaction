@@ -6,6 +6,7 @@ import { Prometheus } from '../prometheus';
 import { Subscriber } from '../subscriber';
 import { Matrixbot } from '../matrixbot';
 import { InputConfig } from '../types';
+import { Cache } from '../cache';
 
 const _startServer = (port: number): express.Application =>{
   const server = express();
@@ -32,6 +33,8 @@ export const startAction = async (cmd): Promise<void> =>{
 
     const notifier = new Matrixbot(cfg.matrixbot.endpoint);
 
-    const subscriber = new Subscriber(cfg,notifier,logger);
+    const cache = new Cache(logger)
+
+    const subscriber = new Subscriber(cfg,notifier,cache,logger);
     await subscriber.start();
 }

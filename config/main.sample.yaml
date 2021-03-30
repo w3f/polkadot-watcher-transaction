@@ -3,10 +3,20 @@ port: 3000
 logLevel: info
 matrixbot:
   endpoint: "http://matrixbot:8080/skill/eventmanager/webhook"
-subscribe:
-  transactions:
-  - name: faucet
-    address: EaG2CRhJWPb7qmdcJvy3LiWdh26Jreu9Dx6R1rXxPmYXoDk 
-    enabledNotifications:
-      received: false
+subscriber:
+  modules:
+    transferEvent:
+      enabled: true
       sent: true
+      received: true
+    balanceChange:
+      enabled: true
+    transferExtrinsic:
+      enabled: false
+  subscriptions:
+  - name: faucet
+    address: Edyfdyoi4KJVdXUJ3SU3nuZYMpg13HHa1SWYtPDCV8UPdxy 
+  - name: myAddress
+    address: GaK38GT7LmgCpRSTRdDC2LeiMaV9TJmx8NmQcb9L3cJ3fyX   
+    balanceChange:
+      received: false 
