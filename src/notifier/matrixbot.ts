@@ -1,11 +1,12 @@
+import { Logger } from '@w3f/logger';
 import got from 'got';
 
 import {
     TransactionData,
-    Notifier,
     MatrixbotMsg,
     TransactionType
-} from './types';
+} from '../types';
+import { Notifier } from './INotifier';
 
 const MsgTemplate = {
     "receiver": "webhook",
@@ -27,7 +28,7 @@ const MsgTemplate = {
 
 
 export class Matrixbot implements Notifier {
-    constructor(private readonly endpoint: string) { }
+    constructor(protected readonly endpoint: string, protected readonly logger: Logger) { }
 
     newTransaction = async (data: TransactionData): Promise<string> =>{
         const json = this._transactionMsg(data);
@@ -47,7 +48,7 @@ export class Matrixbot implements Notifier {
       return await this._send(json);
     }
 
-    private _transactionMsg = (data: TransactionData): MatrixbotMsg =>{
+    protected _transactionMsg = (data: TransactionData): MatrixbotMsg =>{
         //TODO: this functionality is not ready to be used
         const msg = { ...MsgTemplate };
 
@@ -65,7 +66,7 @@ export class Matrixbot implements Notifier {
         return msg;
     }
 
-    private _balanceChangeMsg = (data: TransactionData): MatrixbotMsg =>{
+    protected _balanceChangeMsg = (data: TransactionData): MatrixbotMsg =>{
       const msg = { ...MsgTemplate };
 
       const description = `New Balance Change detected (i.e. staking rewards, transfers, ...) for the account ${data.name}, check https://${data.networkId}.subscan.io/account/${data.address}?tab=reward for details.`;
@@ -80,7 +81,7 @@ export class Matrixbot implements Notifier {
       return msg;
     }
 
-    private _transferMsg = (data: TransactionData): MatrixbotMsg =>{
+    protected _transferMsg = (data: TransactionData): MatrixbotMsg =>{
       const msg = { ...MsgTemplate };
 
       let description: string;
@@ -97,9 +98,16 @@ export class Matrixbot implements Notifier {
       return msg;
     }
 
-    private _send = async (json: MatrixbotMsg): Promise<string> =>{
+    protected _send = async (json: MatrixbotMsg): Promise<string> =>{
+      try {
+        this.logger.info(`Sending New notification...`)
+        this.logger.info(`${JSON.stringify(json)}`)
         const result = await got.post(this.endpoint, { json });
         return result.body;
+      } catch (error) {
+        this.logger.error(`could not notify Transfer Event: ${error.message}`);
+        return error.message
+      }
     }
 
 }

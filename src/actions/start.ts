@@ -4,10 +4,9 @@ import { createLogger } from '@w3f/logger';
 import { Config } from '@w3f/config';
 import { Prometheus } from '../prometheus';
 import { Subscriber } from '../subscriber';
-import { Matrixbot } from '../matrixbot';
 import { InputConfig } from '../types';
 import { Cache } from '../cache';
-import { MessageQueue } from '../messageQueue';
+import { NotifierFactory } from '../notifier/NotifierFactory';
 
 const _startServer = (port: number): express.Application =>{
   const server = express();
@@ -32,11 +31,10 @@ export const startAction = async (cmd): Promise<void> =>{
     promClient.injectMetricsRoute(server)
     promClient.startCollection()
 
-    const notifier = new Matrixbot(cfg.matrixbot.endpoint);
-    const messageQueue = new MessageQueue(notifier,logger)
+    const notifier = new NotifierFactory(cfg.matrixbot,logger).makeNotifier()
 
     const cache = new Cache(logger)
 
-    const subscriber = new Subscriber(cfg,messageQueue,cache,logger);
+    const subscriber = new Subscriber(cfg,notifier,cache,logger);
     await subscriber.start();
 }

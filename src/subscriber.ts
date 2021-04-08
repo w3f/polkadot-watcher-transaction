@@ -9,7 +9,7 @@ import { BalanceChangeBased } from './subscriptionModules/balanceChangeBased';
 import { BlockBased } from './subscriptionModules/blockBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
 import { Cache } from './cache';
-import { MessageQueue } from './messageQueue';
+import { Notifier } from './notifier/INotifier';
 
 export class Subscriber {
     private chain: Text;
@@ -25,7 +25,7 @@ export class Subscriber {
     
     constructor(
         cfg: InputConfig,
-        private readonly messageQueue: MessageQueue,
+        private readonly notifier: Notifier,
         private readonly cache: Cache,
         private readonly logger: Logger) {
         this.endpoint = cfg.endpoint;
@@ -79,7 +79,7 @@ export class Subscriber {
       const subscriptionModuleConfig: SubscriptionModuleConstructorParams = {
         api: this.api,
         networkId: this.networkId,
-        messageQueue: this.messageQueue,
+        notifier: this.notifier,
         config: this.config,
         logger: this.logger
       }

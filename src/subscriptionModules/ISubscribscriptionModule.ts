@@ -2,8 +2,8 @@
 
 import { ApiPromise } from "@polkadot/api";
 import { Logger } from "@w3f/logger";
+import { Notifier } from "../notifier/INotifier";
 import { SubscriberConfig } from "../types";
-import { MessageQueue } from "../messageQueue";
 
 export interface ISubscriptionModule{
   subscribe(): Promise<void>;
@@ -12,7 +12,7 @@ export interface ISubscriptionModule{
 export interface SubscriptionModuleConstructorParams {
   api: ApiPromise;
   networkId: string;
-  messageQueue: MessageQueue;
+  notifier: Notifier;
   config: SubscriberConfig;
   logger: Logger;
 }

@@ -6,7 +6,7 @@ import {
 import { asyncForEach, getSubscriptionNotificationConfig } from '../utils';
 import { ZeroBalance } from '../constants';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
-import { MessageQueue } from '../messageQueue';
+import { Notifier } from '../notifier/INotifier';
 
 interface InitializedMap {
   [name: string]: boolean;
@@ -17,14 +17,14 @@ export class BalanceChangeBased implements ISubscriptionModule{
     private initializedBalanceSubscriptions: InitializedMap = {};
     private readonly api: ApiPromise
     private readonly networkId: string
-    private readonly messageQueue: MessageQueue
+    private readonly notifier: Notifier
     private readonly config: SubscriberConfig
     private readonly logger: Logger
     
     constructor(params: SubscriptionModuleConstructorParams) {
       this.api = params.api
       this.networkId = params.networkId
-      this.messageQueue = params.messageQueue
+      this.notifier = params.notifier
       this.config = params.config
       this.logger = params.logger
       
@@ -67,7 +67,7 @@ export class BalanceChangeBased implements ISubscriptionModule{
                         if(notificationConfig.sent){
                           this.logger.info(`Balances Change Decrease on account ${subscription.name} detected`)
                           data.txType = TransactionType.Sent;
-                          this._notifyNewBalanceChange(data)
+                          await this._notifyNewBalanceChange(data)
                         }
                         else{
                           this.logger.debug(`Balances Change Decrease on account ${subscription.name} detected. Notification SUPPRESSED`)
@@ -76,7 +76,7 @@ export class BalanceChangeBased implements ISubscriptionModule{
                         if(notificationConfig.received){
                           this.logger.info(`Balances Change Increase on account ${subscription.name} detected`);
                           data.txType = TransactionType.Received;
-                          this._notifyNewBalanceChange(data)        
+                          await this._notifyNewBalanceChange(data)
                         }
                         else{
                           this.logger.debug(`Balances Change Increase on account ${subscription.name} detected. Notification SUPPRESSED`)
@@ -89,10 +89,10 @@ export class BalanceChangeBased implements ISubscriptionModule{
         });
     }
 
-    private _notifyNewBalanceChange = (data: TransactionData): void => {
-      this.logger.debug(`Queuing New Balance Change notification...`)
+    private _notifyNewBalanceChange = async (data: TransactionData): Promise<void> => {
+      this.logger.debug(`Delegating to the Notifier the New Balance Change notification...`)
       this.logger.debug(JSON.stringify(data))
-      this.messageQueue.pushBalanceChange(data)
+      await this.notifier.newBalanceChange(data)
     }
 
  

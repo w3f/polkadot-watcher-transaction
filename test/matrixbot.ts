@@ -2,15 +2,16 @@ import nock from 'nock';
 import * as _ from 'lodash';
 import { should } from 'chai';
 
-import { Matrixbot } from '../src/matrixbot';
+import { Matrixbot } from '../src/notifier/matrixbot';
 import { TransactionType } from '../src/types';
+import { createLogger } from '@w3f/logger';
 
 should();
 
 const host = 'http://localhost:9090';
 const path = 'matrixbot';
 const endpoint = `${host}/${path}`;
-const subject = new Matrixbot(endpoint);
+const subject = new Matrixbot(endpoint,createLogger());
 const senderName = 'senderName';
 const senderAddress = 'senderAddress';
 const receiverName = 'receiverName';

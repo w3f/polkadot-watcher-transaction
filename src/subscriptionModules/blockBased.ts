@@ -6,7 +6,7 @@ import {
 import { Extrinsic, Header } from '@polkadot/types/interfaces';
 import { getSubscriptionNotificationConfig, isTransferBalancesExtrinsic } from '../utils';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
-import { MessageQueue } from '../messageQueue';
+import { Notifier } from '../notifier/INotifier';
 
 
 export class BlockBased implements ISubscriptionModule {
@@ -14,14 +14,14 @@ export class BlockBased implements ISubscriptionModule {
     private subscriptions = new Map<string,Subscribable>()
     private readonly api: ApiPromise
     private readonly networkId: string
-    private readonly messageQueue: MessageQueue
+    private readonly notifier: Notifier
     private readonly config: SubscriberConfig
     private readonly logger: Logger
 
     constructor(params: SubscriptionModuleConstructorParams) {
         this.api = params.api
         this.networkId = params.networkId
-        this.messageQueue = params.messageQueue
+        this.notifier = params.notifier
         this.config = params.config
         this.logger = params.logger
         
@@ -88,7 +88,7 @@ export class BlockBased implements ISubscriptionModule {
 
         if(notificationConfig.sent){
           this.logger.info(`Transfer Balance extrinsic block from ${sender} detected`)
-          this._notifyNewTransaction(data)
+          await this._notifyNewTransaction(data)
           isNewNotificationTriggered = true
         }
         else{
@@ -110,7 +110,7 @@ export class BlockBased implements ISubscriptionModule {
         
         if(notificationConfig.sent){
           this.logger.info(`Transfer Balance Extrinsic block to ${receiver} detected`)
-          this._notifyNewTransaction(data)
+          await this._notifyNewTransaction(data)
           isNewNotificationTriggered = true
         }
         else{
@@ -122,10 +122,10 @@ export class BlockBased implements ISubscriptionModule {
       return isNewNotificationTriggered
     }
 
-    private _notifyNewTransaction = (data: TransactionData): void => {
-      this.logger.debug(`Queuing New Transfer Balance Extrinsic notification...`)
+    private _notifyNewTransaction = async (data: TransactionData): Promise<void> => {
+      this.logger.debug(`Delegating to the Notifier the New Transfer Balance Extrinsic notification...`)
       this.logger.debug(JSON.stringify(data))
-      this.messageQueue.pushExtrinsic(data)
+      await this.notifier.newTransaction(data) 
     }
  
 }

@@ -12,7 +12,6 @@ import { initClient, sendFromAToB  } from './utils';
 import { Cache } from '../src/cache';
 import { CacheDelay, MessageDelay } from '../src/constants';
 import { delay } from '../src/utils';
-import { MessageQueue } from '../src/messageQueue';
 
 should();
 
@@ -135,16 +134,14 @@ describe('Subscriber', () => {
 
   describe('with a started instance, cfg1', () => {
       let nt: NotifierMock
-      let messageQueue: MessageQueue
       let subject: Subscriber
       let cache: Cache
       
       before(async () => {
           nt = new NotifierMock();
-          messageQueue = new MessageQueue(nt,logger)
           cache = new Cache(logger)
           cfg.endpoint = testRPC.endpoint();
-          subject = new Subscriber(cfg, messageQueue, cache, logger);
+          subject = new Subscriber(cfg, nt, cache, logger);
           await subject.start();
       });
 
@@ -154,7 +151,7 @@ describe('Subscriber', () => {
 
               await sendFromAliceToBob();
 
-              await delay(MessageDelay*6)
+              //await delay(MessageDelay*6)
 
               checkNotifiedBalanceChange('Alice', TransactionType.Sent, nt);
               checkNotifiedBalanceChange('Bob', TransactionType.Received, nt);
@@ -230,16 +227,14 @@ describe('Subscriber', () => {
 
   describe('with an started instance, cfg2', () => {
     let nt: NotifierMock
-    let messageQueue: MessageQueue
     let cache: Cache
     
     before(async () => {
         nt = new NotifierMock();
-        messageQueue = new MessageQueue(nt,logger)
         const cfg = cfg2
         cache = new Cache(logger)
         cfg.endpoint = testRPC.endpoint();
-        const subject = new Subscriber(cfg, messageQueue, cache, logger);
+        const subject = new Subscriber(cfg, nt, cache, logger);
         await subject.start();
     });
 
@@ -249,7 +244,7 @@ describe('Subscriber', () => {
 
             await sendFromAliceToBob();
 
-            await delay(MessageDelay*6)
+           // await delay(MessageDelay*6)
 
             checkNotifiedBalanceChange('Alice', TransactionType.Sent, nt, true);
             checkNotifiedBalanceChange('Bob', TransactionType.Received, nt, false);

@@ -7,21 +7,21 @@ import { Event } from '@polkadot/types/interfaces';
 import { extractTransferInfoFromEvent, getSubscriptionNotificationConfig, isBalanceTransferEvent } from '../utils';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Cache } from '../cache';
-import { MessageQueue } from '../messageQueue';
+import { Notifier } from '../notifier/INotifier';
 
 export class EventBased implements ISubscriptionModule{
 
     private subscriptions = new Map<string,Subscribable>()
     private readonly api: ApiPromise
     private readonly networkId: string
-    private readonly messageQueue: MessageQueue
+    private readonly notifier: Notifier
     private readonly config: SubscriberConfig
     private readonly logger: Logger
     
     constructor(params: SubscriptionModuleConstructorParams, private readonly cache: Cache) {
       this.api = params.api
       this.networkId = params.networkId
-      this.messageQueue = params.messageQueue
+      this.notifier = params.notifier
       this.config = params.config
       this.logger = params.logger
       
@@ -107,7 +107,7 @@ export class EventBased implements ISubscriptionModule{
         
         if(notificationConfig.received){
           this.logger.info(`Balances Transfer Event to ${to} detected`)
-          this._notifyNewTransfer(data)
+          await this._notifyNewTransfer(data)
           isNewNotificationTriggered = true
         }
         else{
@@ -119,10 +119,10 @@ export class EventBased implements ISubscriptionModule{
       return isNewNotificationTriggered
     }
     
-    private _notifyNewTransfer = (data: TransactionData): void => {
-      this.logger.debug(`Queuing New Transfer Event notification...`)
+    private _notifyNewTransfer = async (data: TransactionData): Promise<void> => {
+      this.logger.debug(`Delegating to the Notifier the New Transfer Event notification...`)
       this.logger.debug(JSON.stringify(data))
-      this.messageQueue.pushTransfer(data)
+      await this.notifier.newTransfer(data)
     }
 
 }
