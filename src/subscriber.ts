@@ -2,13 +2,14 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import { Text } from '@polkadot/types/primitive';
 import {
-    InputConfig, Notifier, SubscriberConfig
+    InputConfig, SubscriberConfig
 } from './types';
 import { EventBased } from './subscriptionModules/eventBased';
 import { BalanceChangeBased } from './subscriptionModules/balanceChangeBased';
 import { BlockBased } from './subscriptionModules/blockBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
 import { Cache } from './cache';
+import { MessageQueue } from './messageQueue';
 
 export class Subscriber {
     private chain: Text;
@@ -24,7 +25,7 @@ export class Subscriber {
     
     constructor(
         cfg: InputConfig,
-        private readonly notifier: Notifier,
+        private readonly messageQueue: MessageQueue,
         private readonly cache: Cache,
         private readonly logger: Logger) {
         this.endpoint = cfg.endpoint;
@@ -78,7 +79,7 @@ export class Subscriber {
       const subscriptionModuleConfig: SubscriptionModuleConstructorParams = {
         api: this.api,
         networkId: this.networkId,
-        notifier: this.notifier,
+        messageQueue: this.messageQueue,
         config: this.config,
         logger: this.logger
       }

@@ -1,11 +1,12 @@
 import { ApiPromise } from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import {
-    TransactionData, TransactionType, Notifier, FreeBalance, SubscriberConfig
+    TransactionData, TransactionType, FreeBalance, SubscriberConfig
 } from '../types';
-import { asyncForEach, delay, getSubscriptionNotificationConfig } from '../utils';
-import { DelayBalanceDecrease, DelayBalanceIncrease, ZeroBalance } from '../constants';
+import { asyncForEach, getSubscriptionNotificationConfig } from '../utils';
+import { ZeroBalance } from '../constants';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
+import { MessageQueue } from '../messageQueue';
 
 interface InitializedMap {
   [name: string]: boolean;
@@ -16,14 +17,14 @@ export class BalanceChangeBased implements ISubscriptionModule{
     private initializedBalanceSubscriptions: InitializedMap = {};
     private readonly api: ApiPromise
     private readonly networkId: string
-    private readonly notifier: Notifier
+    private readonly messageQueue: MessageQueue
     private readonly config: SubscriberConfig
     private readonly logger: Logger
     
     constructor(params: SubscriptionModuleConstructorParams) {
       this.api = params.api
       this.networkId = params.networkId
-      this.notifier = params.notifier
+      this.messageQueue = params.messageQueue
       this.config = params.config
       this.logger = params.logger
       
@@ -66,10 +67,7 @@ export class BalanceChangeBased implements ISubscriptionModule{
                         if(notificationConfig.sent){
                           this.logger.info(`Balances Change Decrease on account ${subscription.name} detected`)
                           data.txType = TransactionType.Sent;
-                          /**** to fix a bug on the receiver side, the matrixbot... ***/
-                          await delay(DelayBalanceDecrease)
-                          /************************************************************/
-                          await this._notifyNewBalanceChange(data)
+                          this._notifyNewBalanceChange(data)
                         }
                         else{
                           this.logger.debug(`Balances Change Decrease on account ${subscription.name} detected. Notification SUPPRESSED`)
@@ -78,10 +76,7 @@ export class BalanceChangeBased implements ISubscriptionModule{
                         if(notificationConfig.received){
                           this.logger.info(`Balances Change Increase on account ${subscription.name} detected`);
                           data.txType = TransactionType.Received;
-                          /**** to fix a bug on the receiver side, the matrixbot... ***/
-                          await delay(DelayBalanceIncrease)
-                          /************************************************************/
-                          await this._notifyNewBalanceChange(data)        
+                          this._notifyNewBalanceChange(data)        
                         }
                         else{
                           this.logger.debug(`Balances Change Increase on account ${subscription.name} detected. Notification SUPPRESSED`)
@@ -94,14 +89,10 @@ export class BalanceChangeBased implements ISubscriptionModule{
         });
     }
 
-    private _notifyNewBalanceChange = async (data: TransactionData): Promise<void> => {
-      try {
-        this.logger.info(`Sending New Balance Change notification...`)
-        this.logger.debug(JSON.stringify(data))
-        await this.notifier.newBalanceChange(data);
-      } catch (e) {
-          this.logger.error(`could not notify balance change: ${e.message}`);
-      }
+    private _notifyNewBalanceChange = (data: TransactionData): void => {
+      this.logger.debug(`Queuing New Balance Change notification...`)
+      this.logger.debug(JSON.stringify(data))
+      this.messageQueue.pushBalanceChange(data)
     }
 
  

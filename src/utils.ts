@@ -112,6 +112,10 @@ export const delayFunction = (ms: number, fn: () => void): Promise<void> =>{
   return new Promise( resolve => setTimeout( () => { fn(); resolve;}, ms) );
 }
 
+export const setIntervalFunction = (ms: number, fn: () => void): Promise<void> =>{
+  return new Promise( resolve => setInterval( () => { fn(); resolve;}, ms) );
+}
+
 export const delay = (ms: number): Promise<void> =>{
   return new Promise( resolve => setTimeout(resolve, ms) );
 }

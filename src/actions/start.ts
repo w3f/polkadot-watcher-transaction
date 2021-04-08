@@ -7,6 +7,7 @@ import { Subscriber } from '../subscriber';
 import { Matrixbot } from '../matrixbot';
 import { InputConfig } from '../types';
 import { Cache } from '../cache';
+import { MessageQueue } from '../messageQueue';
 
 const _startServer = (port: number): express.Application =>{
   const server = express();
@@ -32,9 +33,10 @@ export const startAction = async (cmd): Promise<void> =>{
     promClient.startCollection()
 
     const notifier = new Matrixbot(cfg.matrixbot.endpoint);
+    const messageQueue = new MessageQueue(notifier,logger)
 
     const cache = new Cache(logger)
 
-    const subscriber = new Subscriber(cfg,notifier,cache,logger);
+    const subscriber = new Subscriber(cfg,messageQueue,cache,logger);
     await subscriber.start();
 }

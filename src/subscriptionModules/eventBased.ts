@@ -1,26 +1,27 @@
 import { ApiPromise} from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import {
-    TransactionData, TransactionType, Notifier, SubscriberConfig, Subscribable
+    TransactionData, TransactionType, SubscriberConfig, Subscribable
 } from '../types';
 import { Event } from '@polkadot/types/interfaces';
 import { extractTransferInfoFromEvent, getSubscriptionNotificationConfig, isBalanceTransferEvent } from '../utils';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Cache } from '../cache';
+import { MessageQueue } from '../messageQueue';
 
 export class EventBased implements ISubscriptionModule{
 
     private subscriptions = new Map<string,Subscribable>()
     private readonly api: ApiPromise
     private readonly networkId: string
-    private readonly notifier: Notifier
+    private readonly messageQueue: MessageQueue
     private readonly config: SubscriberConfig
     private readonly logger: Logger
     
     constructor(params: SubscriptionModuleConstructorParams, private readonly cache: Cache) {
       this.api = params.api
       this.networkId = params.networkId
-      this.notifier = params.notifier
+      this.messageQueue = params.messageQueue
       this.config = params.config
       this.logger = params.logger
       
@@ -106,7 +107,7 @@ export class EventBased implements ISubscriptionModule{
         
         if(notificationConfig.received){
           this.logger.info(`Balances Transfer Event to ${to} detected`)
-          await this._notifyNewTransfer(data)
+          this._notifyNewTransfer(data)
           isNewNotificationTriggered = true
         }
         else{
@@ -118,15 +119,10 @@ export class EventBased implements ISubscriptionModule{
       return isNewNotificationTriggered
     }
     
-    private _notifyNewTransfer = async (data: TransactionData): Promise<void> => {
-      try {
-        this.logger.info(`Sending New Transfer Event notification...`)
-        this.logger.debug(JSON.stringify(data))
-        await this.notifier.newTransfer(data);
-      } catch (e) {
-          this.logger.error(`could not notify Transfer Event: ${e.message}`);
-      }
+    private _notifyNewTransfer = (data: TransactionData): void => {
+      this.logger.debug(`Queuing New Transfer Event notification...`)
+      this.logger.debug(JSON.stringify(data))
+      this.messageQueue.pushTransfer(data)
     }
 
- 
 }

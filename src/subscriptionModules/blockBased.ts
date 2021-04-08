@@ -1,11 +1,12 @@
 import { ApiPromise} from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import {
-    TransactionData, TransactionType, Notifier, SubscriberConfig, Subscribable
+    TransactionData, TransactionType, SubscriberConfig, Subscribable
 } from '../types';
 import { Extrinsic, Header } from '@polkadot/types/interfaces';
 import { getSubscriptionNotificationConfig, isTransferBalancesExtrinsic } from '../utils';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
+import { MessageQueue } from '../messageQueue';
 
 
 export class BlockBased implements ISubscriptionModule {
@@ -13,14 +14,14 @@ export class BlockBased implements ISubscriptionModule {
     private subscriptions = new Map<string,Subscribable>()
     private readonly api: ApiPromise
     private readonly networkId: string
-    private readonly notifier: Notifier
+    private readonly messageQueue: MessageQueue
     private readonly config: SubscriberConfig
     private readonly logger: Logger
 
     constructor(params: SubscriptionModuleConstructorParams) {
         this.api = params.api
         this.networkId = params.networkId
-        this.notifier = params.notifier
+        this.messageQueue = params.messageQueue
         this.config = params.config
         this.logger = params.logger
         
@@ -109,7 +110,7 @@ export class BlockBased implements ISubscriptionModule {
         
         if(notificationConfig.sent){
           this.logger.info(`Transfer Balance Extrinsic block to ${receiver} detected`)
-          await this._notifyNewTransaction(data)
+          this._notifyNewTransaction(data)
           isNewNotificationTriggered = true
         }
         else{
@@ -121,14 +122,10 @@ export class BlockBased implements ISubscriptionModule {
       return isNewNotificationTriggered
     }
 
-    private _notifyNewTransaction = async (data: TransactionData): Promise<void> => {
-      try {
-        this.logger.info(`Sending New Transfer Balance Extrinsic notification...`)
-        this.logger.debug(JSON.stringify(data))
-        await this.notifier.newTransaction(data);
-      } catch (e) {
-          this.logger.error(`could not notify Extrinsic Block detection: ${e.message}`);
-      }
+    private _notifyNewTransaction = (data: TransactionData): void => {
+      this.logger.debug(`Queuing New Transfer Balance Extrinsic notification...`)
+      this.logger.debug(JSON.stringify(data))
+      this.messageQueue.pushExtrinsic(data)
     }
  
 }
