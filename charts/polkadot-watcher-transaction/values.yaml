@@ -2,7 +2,7 @@ environment: production
 
 image:
   repo: web3f/polkadot-watcher-transaction
-  tag: v0.3.0
+  tag: v0.3.1
 
 config:
   endpoint: "wss://kusama-rpc.polkadot.io/"
@@ -10,7 +10,18 @@ config:
   logLevel: info
   matrixbot:
     endpoint: "http://matrixbot:8080/skill/eventmanager/webhook"
+    strategy: "NoDuplicates"
+    noDuplicatesWindow: 5000
   subscriber:
+    modules:
+      transferEvent:
+        enabled: true
+        sent: true
+        received: true
+      balanceChange:
+        enabled: true
+      transferExtrinsic:
+        enabled: false
     subscriptions: 
     - name: faucet
       address: EaG2CRhJWPb7qmdcJvy3LiWdh26Jreu9Dx6R1rXxPmYXoDk 

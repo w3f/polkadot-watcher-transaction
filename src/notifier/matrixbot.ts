@@ -1,5 +1,6 @@
 import { Logger } from '@w3f/logger';
 import got from 'got';
+import _ from 'lodash';
 
 import {
     TransactionData,
@@ -50,7 +51,7 @@ export class Matrixbot implements Notifier {
 
     protected _transactionMsg = (data: TransactionData): MatrixbotMsg =>{
         //TODO: this functionality is not ready to be used
-        const msg = { ...MsgTemplate };
+        const msg = _.cloneDeep(MsgTemplate)
 
         let description: string;
         let alertname: string;
@@ -67,7 +68,7 @@ export class Matrixbot implements Notifier {
     }
 
     protected _balanceChangeMsg = (data: TransactionData): MatrixbotMsg =>{
-      const msg = { ...MsgTemplate };
+      const msg = _.cloneDeep(MsgTemplate)
 
       const description = `New Balance Change detected (i.e. staking rewards, transfers, ...) for the account ${data.name}, check https://${data.networkId}.subscan.io/account/${data.address}?tab=reward for details.`;
       let alertname: string;
@@ -82,7 +83,7 @@ export class Matrixbot implements Notifier {
     }
 
     protected _transferMsg = (data: TransactionData): MatrixbotMsg =>{
-      const msg = { ...MsgTemplate };
+      const msg = _.cloneDeep(MsgTemplate)
 
       let description: string;
       let alertname: string;

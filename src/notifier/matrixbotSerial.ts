@@ -13,9 +13,7 @@ export class MatrixbotSerial extends Matrixbot implements Notifier {
 
   constructor(endpoint: string, logger: Logger) {
     super(endpoint, logger);
-    /**** Matrixbot receiver seems having issues handling concurrent messages ... ***/
     setInterval(this._sendQueued,MessageDelay)
-    /************************************************************/
   }
 
   newTransfer = async (data: TransactionData): Promise<string> =>{
@@ -47,7 +45,8 @@ export class MatrixbotSerial extends Matrixbot implements Notifier {
   }
 
   _pop = (): MatrixbotMsg | undefined => {
-    return this._store.shift();
+    const msg = this._store.shift();
+    return msg
   }
   
 

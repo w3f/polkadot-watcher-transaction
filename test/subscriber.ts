@@ -10,7 +10,7 @@ import {
 import { TransactionType } from '../src/types';
 import { initClient, sendFromAToB  } from './utils';
 import { Cache } from '../src/cache';
-import { CacheDelay, MessageDelay } from '../src/constants';
+import { CacheDelay } from '../src/constants';
 import { delay } from '../src/utils';
 
 should();
@@ -151,8 +151,6 @@ describe('Subscriber', () => {
 
               await sendFromAliceToBob();
 
-              //await delay(MessageDelay*6)
-
               checkNotifiedBalanceChange('Alice', TransactionType.Sent, nt);
               checkNotifiedBalanceChange('Bob', TransactionType.Received, nt);
               checkNotifiedTransactionExtrinsic('Alice', TransactionType.Sent, nt)
@@ -243,8 +241,6 @@ describe('Subscriber', () => {
             nt.resetReceivedData();
 
             await sendFromAliceToBob();
-
-           // await delay(MessageDelay*6)
 
             checkNotifiedBalanceChange('Alice', TransactionType.Sent, nt, true);
             checkNotifiedBalanceChange('Bob', TransactionType.Received, nt, false);

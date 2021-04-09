@@ -33,6 +33,8 @@ export interface SubscriberConfig {
 
 export interface MatrixbotConfig {
   endpoint: string;
+  strategy?: "NoDuplicates" | "Serial" | "Default";
+  noDuplicatesWindow?: number;
 }
 
 export interface FreeBalance {
