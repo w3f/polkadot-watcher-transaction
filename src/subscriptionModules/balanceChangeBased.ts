@@ -1,11 +1,12 @@
 import { ApiPromise } from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import {
-    TransactionData, TransactionType, Notifier, FreeBalance, SubscriberConfig
+    TransactionData, TransactionType, FreeBalance, SubscriberConfig
 } from '../types';
-import { asyncForEach, delay, getSubscriptionNotificationConfig } from '../utils';
-import { DelayBalanceDecrease, DelayBalanceIncrease, ZeroBalance } from '../constants';
+import { asyncForEach, getSubscriptionNotificationConfig } from '../utils';
+import { ZeroBalance } from '../constants';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
+import { Notifier } from '../notifier/INotifier';
 
 interface InitializedMap {
   [name: string]: boolean;
@@ -66,9 +67,6 @@ export class BalanceChangeBased implements ISubscriptionModule{
                         if(notificationConfig.sent){
                           this.logger.info(`Balances Change Decrease on account ${subscription.name} detected`)
                           data.txType = TransactionType.Sent;
-                          /**** to fix a bug on the receiver side, the matrixbot... ***/
-                          await delay(DelayBalanceDecrease)
-                          /************************************************************/
                           await this._notifyNewBalanceChange(data)
                         }
                         else{
@@ -78,10 +76,7 @@ export class BalanceChangeBased implements ISubscriptionModule{
                         if(notificationConfig.received){
                           this.logger.info(`Balances Change Increase on account ${subscription.name} detected`);
                           data.txType = TransactionType.Received;
-                          /**** to fix a bug on the receiver side, the matrixbot... ***/
-                          await delay(DelayBalanceIncrease)
-                          /************************************************************/
-                          await this._notifyNewBalanceChange(data)        
+                          await this._notifyNewBalanceChange(data)
                         }
                         else{
                           this.logger.debug(`Balances Change Increase on account ${subscription.name} detected. Notification SUPPRESSED`)
@@ -95,13 +90,9 @@ export class BalanceChangeBased implements ISubscriptionModule{
     }
 
     private _notifyNewBalanceChange = async (data: TransactionData): Promise<void> => {
-      try {
-        this.logger.info(`Sending New Balance Change notification...`)
-        this.logger.debug(JSON.stringify(data))
-        await this.notifier.newBalanceChange(data);
-      } catch (e) {
-          this.logger.error(`could not notify balance change: ${e.message}`);
-      }
+      this.logger.debug(`Delegating to the Notifier the New Balance Change notification...`)
+      this.logger.debug(JSON.stringify(data))
+      await this.notifier.newBalanceChange(data)
     }
 
  

@@ -1,11 +1,12 @@
 import { ApiPromise} from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import {
-    TransactionData, TransactionType, Notifier, SubscriberConfig, Subscribable
+    TransactionData, TransactionType, SubscriberConfig, Subscribable
 } from '../types';
 import { Extrinsic, Header } from '@polkadot/types/interfaces';
 import { getSubscriptionNotificationConfig, isTransferBalancesExtrinsic } from '../utils';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
+import { Notifier } from '../notifier/INotifier';
 
 
 export class BlockBased implements ISubscriptionModule {
@@ -87,7 +88,7 @@ export class BlockBased implements ISubscriptionModule {
 
         if(notificationConfig.sent){
           this.logger.info(`Transfer Balance extrinsic block from ${sender} detected`)
-          this._notifyNewTransaction(data)
+          await this._notifyNewTransaction(data)
           isNewNotificationTriggered = true
         }
         else{
@@ -122,13 +123,9 @@ export class BlockBased implements ISubscriptionModule {
     }
 
     private _notifyNewTransaction = async (data: TransactionData): Promise<void> => {
-      try {
-        this.logger.info(`Sending New Transfer Balance Extrinsic notification...`)
-        this.logger.debug(JSON.stringify(data))
-        await this.notifier.newTransaction(data);
-      } catch (e) {
-          this.logger.error(`could not notify Extrinsic Block detection: ${e.message}`);
-      }
+      this.logger.debug(`Delegating to the Notifier the New Transfer Balance Extrinsic notification...`)
+      this.logger.debug(JSON.stringify(data))
+      await this.notifier.newTransaction(data) 
     }
  
 }

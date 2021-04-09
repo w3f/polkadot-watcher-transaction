@@ -135,11 +135,13 @@ describe('Subscriber', () => {
   describe('with a started instance, cfg1', () => {
       let nt: NotifierMock
       let subject: Subscriber
+      let cache: Cache
       
       before(async () => {
           nt = new NotifierMock();
+          cache = new Cache(logger)
           cfg.endpoint = testRPC.endpoint();
-          subject = new Subscriber(cfg, nt, new Cache(logger), logger);
+          subject = new Subscriber(cfg, nt, cache, logger);
           await subject.start();
       });
 
@@ -223,12 +225,14 @@ describe('Subscriber', () => {
 
   describe('with an started instance, cfg2', () => {
     let nt: NotifierMock
+    let cache: Cache
     
     before(async () => {
         nt = new NotifierMock();
         const cfg = cfg2
+        cache = new Cache(logger)
         cfg.endpoint = testRPC.endpoint();
-        const subject = new Subscriber(cfg, nt, new Cache(logger), logger);
+        const subject = new Subscriber(cfg, nt, cache, logger);
         await subject.start();
     });
 

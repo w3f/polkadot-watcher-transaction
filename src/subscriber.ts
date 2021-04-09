@@ -2,13 +2,14 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import { Text } from '@polkadot/types/primitive';
 import {
-    InputConfig, Notifier, SubscriberConfig
+    InputConfig, SubscriberConfig
 } from './types';
 import { EventBased } from './subscriptionModules/eventBased';
 import { BalanceChangeBased } from './subscriptionModules/balanceChangeBased';
 import { BlockBased } from './subscriptionModules/blockBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
 import { Cache } from './cache';
+import { Notifier } from './notifier/INotifier';
 
 export class Subscriber {
     private chain: Text;

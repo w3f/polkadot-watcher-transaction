@@ -3,6 +3,8 @@ port: 3000
 logLevel: info
 matrixbot:
   endpoint: "http://matrixbot:8080/skill/eventmanager/webhook"
+  strategy: "NoDuplicates"
+  noDuplicatesWindow: 5000
 subscriber:
   modules:
     transferEvent:

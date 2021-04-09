@@ -33,6 +33,8 @@ export interface SubscriberConfig {
 
 export interface MatrixbotConfig {
   endpoint: string;
+  strategy?: "NoDuplicates" | "Serial" | "Default";
+  noDuplicatesWindow?: number;
 }
 
 export interface FreeBalance {
@@ -59,12 +61,6 @@ export interface TransferInfo {
 
 export interface InitializedMap {
   [name: string]: boolean;
-}
-
-export interface Notifier {
-  newTransaction(data: TransactionData): Promise<string>;
-  newBalanceChange(data: TransactionData): Promise<string>;
-  newTransfer(data: TransactionData): Promise<string>;
 }
 
 interface LabelMap {

@@ -1,12 +1,13 @@
 import { ApiPromise} from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import {
-    TransactionData, TransactionType, Notifier, SubscriberConfig, Subscribable
+    TransactionData, TransactionType, SubscriberConfig, Subscribable
 } from '../types';
 import { Event } from '@polkadot/types/interfaces';
 import { extractTransferInfoFromEvent, getSubscriptionNotificationConfig, isBalanceTransferEvent } from '../utils';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Cache } from '../cache';
+import { Notifier } from '../notifier/INotifier';
 
 export class EventBased implements ISubscriptionModule{
 
@@ -119,14 +120,9 @@ export class EventBased implements ISubscriptionModule{
     }
     
     private _notifyNewTransfer = async (data: TransactionData): Promise<void> => {
-      try {
-        this.logger.info(`Sending New Transfer Event notification...`)
-        this.logger.debug(JSON.stringify(data))
-        await this.notifier.newTransfer(data);
-      } catch (e) {
-          this.logger.error(`could not notify Transfer Event: ${e.message}`);
-      }
+      this.logger.debug(`Delegating to the Notifier the New Transfer Event notification...`)
+      this.logger.debug(JSON.stringify(data))
+      await this.notifier.newTransfer(data)
     }
 
- 
 }

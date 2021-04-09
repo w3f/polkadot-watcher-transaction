@@ -2,7 +2,8 @@
 
 import { ApiPromise } from "@polkadot/api";
 import { Logger } from "@w3f/logger";
-import { Notifier, SubscriberConfig } from "../types";
+import { Notifier } from "../notifier/INotifier";
+import { SubscriberConfig } from "../types";
 
 export interface ISubscriptionModule{
   subscribe(): Promise<void>;
