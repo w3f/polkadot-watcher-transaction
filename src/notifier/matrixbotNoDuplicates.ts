@@ -99,8 +99,8 @@ export class MatrixbotNoDuplicates extends Matrixbot implements Notifier {
   }
 
   _isBalanceMsgSuperfluous = (candidate: MatrixbotMsg, test: MatrixbotMsg): boolean => {
-    const candidateAddress = candidate.alerts[0].annotations.description.match(/https:\/\/kusama.subscan.io\/account\/(.*)\?/)[1]
-    const testAddress = test.alerts[0].annotations.description.match(/https:\/\/kusama.subscan.io\/account\/(.*)\?/)[1]
+    const candidateAddress = candidate.alerts[0].annotations.description.match(/account\/(.*)\?/)[1]
+    const testAddress = test.alerts[0].annotations.description.match(/account\/(.*)\?/)[1]
     const candidateAlertname = candidate.alerts[0].labels.alertname
     const testAlertname = test.alerts[0].labels.alertname
 
