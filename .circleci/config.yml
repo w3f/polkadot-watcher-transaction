@@ -37,6 +37,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+          version: 19.03.13
       - run:
           command: |
             /scripts/build-image.sh web3f/polkadot-watcher-transaction .
