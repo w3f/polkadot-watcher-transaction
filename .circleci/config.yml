@@ -10,9 +10,20 @@ jobs:
           command: |
             helm lint ./charts/polkadot-watcher-transaction
 
+  unitTest:
+    docker:
+      - image: web3f/node-dind:v1.0.0
+      - image: parity/polkadot:v0.8.30 
+        name: polkadot
+        command: --chain=kusama-dev --ws-port 11000 --alice --ws-external --rpc-methods=Unsafe --rpc-cors=all
+    steps:
+      - checkout
+      - run: yarn
+      - run: yarn test          
+
   yarnLint:
     docker:
-      - image: web3f/node-dind:v0.3.0
+      - image: web3f/node-dind:v1.0.0
     steps:
       - checkout
       - run: yarn
@@ -26,6 +37,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+          version: 19.03.13
       - run:
           command: |
             /scripts/build-image.sh web3f/polkadot-watcher-transaction .
@@ -64,6 +76,10 @@ workflows:
   version: 2
   test_and_deploy:
     jobs:
+      - unitTest:
+          filters:
+            tags:
+              only: /.*/
       - helmLint:
           filters:
             tags:
@@ -78,6 +94,7 @@ workflows:
             tags:
               only: /.*/
           requires:
+            - unitTest
             - helmLint
             - yarnLint
       - integrationTests:
