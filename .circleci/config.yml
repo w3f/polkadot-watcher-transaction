@@ -10,9 +10,17 @@ jobs:
           command: |
             helm lint ./charts/polkadot-watcher-transaction
 
+  unitTest:
+    docker:
+      - image: web3f/node-dind:v0.4.2
+    steps:
+      - checkout
+      - run: yarn
+      - run: yarn test          
+
   yarnLint:
     docker:
-      - image: web3f/node-dind:v0.3.0
+      - image: web3f/node-dind:v0.4.2
     steps:
       - checkout
       - run: yarn
@@ -64,6 +72,10 @@ workflows:
   version: 2
   test_and_deploy:
     jobs:
+      - unitTest:
+          filters:
+            tags:
+              only: /.*/
       - helmLint:
           filters:
             tags:
@@ -78,6 +90,7 @@ workflows:
             tags:
               only: /.*/
           requires:
+            - unitTest
             - helmLint
             - yarnLint
       - integrationTests:
