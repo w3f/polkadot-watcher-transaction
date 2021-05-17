@@ -8,6 +8,7 @@ import { EventBased } from './subscriptionModules/eventBased';
 import { BalanceChangeBased } from './subscriptionModules/balanceChangeBased';
 import { BlockBased } from './subscriptionModules/blockBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
+import { RewardBased } from './subscriptionModules/rewardBased';
 import { Cache } from './cache';
 import { Notifier } from './notifier/INotifier';
 
@@ -22,6 +23,7 @@ export class Subscriber {
     private blockBased: BlockBased;
     private balanceChangeBased: BalanceChangeBased;
     private eventBased: EventBased;
+    private rewardBased: RewardBased;
     
     constructor(
         cfg: InputConfig,
@@ -47,6 +49,7 @@ export class Subscriber {
         this.config.modules?.transferExtrinsic?.enabled != false && this.blockBased.subscribe()
         this.config.modules?.balanceChange?.enabled != false && this.balanceChangeBased.subscribe()
         this.config.modules?.transferEvent?.enabled != false && this.eventBased.subscribe();
+        this.config.modules?.rewardEvent?.enabled != false && this.rewardBased.subscribe();
     }
 
     private _initAPI = async (): Promise<void> =>{
