@@ -51,8 +51,6 @@ export class RewardBased implements ISubscriptionModule{
         // Skip checked Eras.
         .filter((era) => !this.checkedEras.includes(era));
 
-      console.log(toCheck);
-
       await asyncForEach(toCheck, async (era) => {
         this.logger.debug(`Checking validator reward for Era ${era}`);
 
@@ -70,17 +68,29 @@ export class RewardBased implements ISubscriptionModule{
         const rewardPerPoint = totalReward / totalPoints.toBigInt();
 
         this.config.subscriptions.forEach((target) => {
-          let account_id = this.api.createType('AccountId', target.address);
-          let validator_points= individualPoints.get(account_id);
-          if (validator_points != undefined) {
-            const validator_reward = validator_points.toBigInt() * rewardPerPoint;
+          // NOTE: This does not seem to work:
+          //
+          // ```
+          // let account_id = this.api.createType('AccountId', target.address);
+          // let points = individualPoints.get(account_id);
+          // ```
+          //
+          // Related to: https://stackoverflow.com/a/64449712
+          //
+          // As of now, iterate through the entire map and match addresses (which is inefficient).
+          for (const [account_id, points] of individualPoints) {
+            if (account_id.toString() === target.address) {
+              if (points != undefined) {
+                const validator_reward = this.api.createType('Balance', points.toBigInt() * rewardPerPoint);
 
-            // TODO: Track reward.
-            this.logger.info(`Validator ${target.address} received a reward of ${validator_reward} for Era ${era}`);
-          } else {
-            // TODO: Track *missing* reward.
-            this.logger.warn(`Validator ${target.address} did NOT receive a reward for Era ${era}`);
+                // TODO: Track reward.
+                this.logger.info(`Validator ${target.address} received a reward of ${validator_reward.toHuman()} for Era ${era}`);
+                return;
+              }
+            }
           }
+
+          this.logger.warn(`Validator ${target.address} did NOT receive a reward for Era ${era}`);
         });
 
         // Track checked era
