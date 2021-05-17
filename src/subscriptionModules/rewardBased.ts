@@ -8,7 +8,7 @@ import { ZeroBalance } from '../constants';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Notifier } from '../notifier/INotifier';
 
-const HISTORY_DEPTH = 2;
+const HISTORY_DEPTH = 4;
 
 export class RewardBased implements ISubscriptionModule{
 
@@ -17,6 +17,7 @@ export class RewardBased implements ISubscriptionModule{
     private readonly notifier: Notifier
     private readonly config: SubscriberConfig
     private readonly logger: Logger
+    private lastEraCheck: number
     private checkedEras: Array<number>
     
     constructor(params: SubscriptionModuleConstructorParams) {
@@ -25,32 +26,56 @@ export class RewardBased implements ISubscriptionModule{
       this.notifier = params.notifier
       this.config = params.config
       this.logger = params.logger
+      this.lastEraCheck = 0;
       this.checkedEras = new Array();
     }
 
     public subscribe = async (): Promise<void> => {
-        await this._startEraRewardCheck()
+        await this._handleEraChange()
         this.logger.info(`Reward Based Module subscribed...`)
     }
 
-    private async _startEraRewardCheck(): Promise<void> {
-      // Get current Era
-      let tryCurrentEra = await this.api.query.staking.activeEra();
-      let currentEra;
-      if (tryCurrentEra.isSome) {
-        currentEra = tryCurrentEra.unwrap().index.toNumber();
-        this.logger.info(`Current Era index: ${currentEra}`);
-      } else {
-        throw Error("failed to fetch current Era index");
+    private async _handleEraChange(): Promise<void> {
+      while (true) {
+        // Get current Era
+        let tryCurrentEra = await this.api.query.staking.activeEra();
+        if (tryCurrentEra.isSome) {
+          const lastCompletedEra = tryCurrentEra.unwrap().index.toNumber() - 1;
+
+          // Determine whether a new check must be run (Era change).
+          if (lastCompletedEra > this.lastEraCheck) {
+            let toCheck;
+
+            // On startup, generate a list of Eras (`HISTORY_DEPTH`) that need
+            // to be checked.
+            if (this.lastEraCheck === 0) {
+              toCheck = Array(HISTORY_DEPTH)
+                .fill(0)
+                .map((era, index) => lastCompletedEra - HISTORY_DEPTH + index + 1)
+                // Skip checked Eras.
+                .filter((era) => !this.checkedEras.includes(era));
+            } else {
+              // Just check the latest (completed) Era.
+              toCheck = Array(lastCompletedEra);
+            }
+
+            // Update last Era index check.
+            this.lastEraCheck = lastCompletedEra;
+
+            // Start the reward check.
+            await this._startEraRewardCheck(toCheck);
+          }
+
+          this.logger.info(`Last Era index check: ${this.lastEraCheck}`);
+        } else {
+          throw Error("failed to fetch current Era index");
+        }
+
+        // Sleep
       }
+    }
 
-      // Generate list of Era indexes to fetch.
-      let toCheck = Array(HISTORY_DEPTH)
-        .fill(0)
-        .map((era, index) => currentEra - HISTORY_DEPTH + index)
-        // Skip checked Eras.
-        .filter((era) => !this.checkedEras.includes(era));
-
+    private async _startEraRewardCheck(toCheck: Array<number>): Promise<void> {
       await asyncForEach(toCheck, async (era) => {
         this.logger.debug(`Checking validator reward for Era ${era}`);
 
