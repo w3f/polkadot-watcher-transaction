@@ -8,18 +8,14 @@ import { ZeroBalance } from '../constants';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Notifier } from '../notifier/INotifier';
 
-interface InitializedMap {
-  [name: string]: boolean;
-}
-
 export class RewardBased implements ISubscriptionModule{
 
-    private initializedBalanceSubscriptions: InitializedMap = {};
     private readonly api: ApiPromise
     private readonly networkId: string
     private readonly notifier: Notifier
     private readonly config: SubscriberConfig
     private readonly logger: Logger
+    private checkedEras: Array<[]>
     
     constructor(params: SubscriptionModuleConstructorParams) {
       this.api = params.api
@@ -27,34 +23,45 @@ export class RewardBased implements ISubscriptionModule{
       this.notifier = params.notifier
       this.config = params.config
       this.logger = params.logger
-      
-      this._initBalanceChangeSubscriptions()
-    }
-
-    private _initBalanceChangeSubscriptions = (): void => {
-      for (const subscription of this.config.subscriptions) {
-        this.initializedBalanceSubscriptions[subscription.name] = false;
-      }
     }
 
     public subscribe = async (): Promise<void> => {
         await this._handleAccountBalanceSubscription()
-        this.logger.info(`Balance Change Based Module subscribed...`)
+        this.logger.info(`Reward Based Module subscribed...`)
     }
 
     private async _handleAccountBalanceSubscription(): Promise<void> {
-        const freeBalance: FreeBalance = {};
-        await asyncForEach(this.config.subscriptions, async (subscription) => {
-            const data = await this.api.query.staking.erasValidatorReward(0);
-            // TODO
-        });
-    }
+      // Get current Era
+      let tryCurrentEra = await this.api.query.staking.activeEra();
+      let currentEra;
+      if (tryCurrentEra.isSome) {
+        currentEra = tryCurrentEra.unwrap().index.toBigInt();
+      } else {
+        throw Error("");
+      }
 
-    private _notifyNewBalanceChange = async (data: TransactionData): Promise<void> => {
-      this.logger.debug(`Delegating to the Notifier the New Balance Change notification...`)
-      this.logger.debug(JSON.stringify(data))
-      await this.notifier.newBalanceChange(data)
-    }
+      // Get total reward for the specified Era.
+      let tryTotalReward = await this.api.query.staking.erasValidatorReward(2250);
+      let totalReward;
+      if (tryTotalReward.isSome) {
+        totalReward = tryTotalReward.unwrap().toBigInt();
+      } else {
+        throw Error("");
+      }
 
- 
+      // Get the reward points.
+      const { total: totalPoints, individual: individualPoints } = await this.api.query.staking.erasRewardPoints(2250);
+      const rewardPerPont = totalReward / totalPoints.toBigInt();
+
+      this.config.subscriptions.forEach((target) => {
+        let account_id = this.api.createType('AccountId', target.address);
+        let validator_points= individualPoints.get(account_id);
+        if (validator_points != undefined) {
+          const validator_reward = validator_points.toBigInt() * rewardPerPont;
+        } else {
+          // No reward for validator!
+          // TODO
+        }
+      });
+    }
 }

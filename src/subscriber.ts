@@ -90,6 +90,7 @@ export class Subscriber {
       this.blockBased = new BlockBased(subscriptionModuleConfig)
       this.balanceChangeBased = new BalanceChangeBased(subscriptionModuleConfig)
       this.eventBased = new EventBased(subscriptionModuleConfig,this.cache)
+      this.rewardBased = new RewardBased(subscriptionModuleConfig)
     }
 
 }
