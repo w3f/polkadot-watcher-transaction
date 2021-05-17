@@ -64,14 +64,15 @@ export class RewardBased implements ISubscriptionModule{
 
             // Start the reward check.
             await this._startEraRewardCheck(toCheck);
-          }
 
-          this.logger.info(`Last Era index check: ${this.lastEraCheck}`);
+            this.logger.info(`Last Era index check: ${this.lastEraCheck}`);
+          }
         } else {
           throw Error("failed to fetch current Era index");
         }
 
         // Sleep
+        await new Promise(r => setTimeout(r, 5000));
       }
     }
 
