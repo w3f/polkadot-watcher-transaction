@@ -3,7 +3,6 @@ import program from 'commander';
 
 import { startAction } from './actions/start';
 
-
 program
   .command('start')
   .description('Starts the watcher.')
