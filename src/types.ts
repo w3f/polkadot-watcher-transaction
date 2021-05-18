@@ -28,7 +28,7 @@ export interface SubscriberConfig {
     transferEvent?: SubscriptionModuleConfig;
     balanceChange?: SubscriptionModuleConfig;
     transferExtrinsic?: SubscriptionModuleConfig;
-    rewardEvent?: SubscriptionModuleConfig;
+    rewardCheck?: SubscriptionModuleConfig;
   };
 }
 

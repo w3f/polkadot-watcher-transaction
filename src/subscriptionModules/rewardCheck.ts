@@ -8,9 +8,9 @@ import { ZeroBalance } from '../constants';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Notifier } from '../notifier/INotifier';
 
-const HISTORY_DEPTH = 4;
+const HISTORY_DEPTH = 84;
 
-export class RewardBased implements ISubscriptionModule{
+export class RewardCheck implements ISubscriptionModule{
 
     private readonly api: ApiPromise
     private readonly networkId: string
@@ -47,16 +47,18 @@ export class RewardBased implements ISubscriptionModule{
             let toCheck;
 
             // On startup, generate a list of Eras (`HISTORY_DEPTH`) that need
-            // to be checked.
+            // to be checked. Ideally, we'll keep that list in persisted storage
+            // so it does not need to be re-executed on restarts.
             if (this.lastEraCheck === 0) {
               toCheck = Array(HISTORY_DEPTH)
                 .fill(0)
-                .map((era, index) => lastCompletedEra - HISTORY_DEPTH + index + 1)
+                .map((era, index) => lastCompletedEra - HISTORY_DEPTH + 1 + index)
                 // Skip checked Eras.
                 .filter((era) => !this.checkedEras.includes(era));
             } else {
               // Just check the latest (completed) Era.
               toCheck = Array(lastCompletedEra);
+              this.logger.info(`New Era ${lastCompletedEra} completed`);
             }
 
             // Update last Era index check.
@@ -117,6 +119,7 @@ export class RewardBased implements ISubscriptionModule{
           }
 
           this.logger.warn(`Validator ${target.address} did NOT receive a reward for Era ${era}`);
+          // TODO: Track **missing** reward.
         });
 
         // Track checked era
