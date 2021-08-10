@@ -45,11 +45,13 @@ export class BalanceChangeBased implements ISubscriptionModule{
     private async _handleAccountBalanceSubscription(): Promise<void> {
         const freeBalance: FreeBalance = {};
         await asyncForEach(this.config.subscriptions, async (subscription) => {
-            const { data: { free: previousFree } } = await this.api.query.system.account(subscription.address);
-            freeBalance[subscription.address] = previousFree;
+            const { data: { free: initFree } } = await this.api.query.system.account(subscription.address);
+            freeBalance[subscription.address] = initFree;
+
             await this.api.query.system.account(subscription.address, async (acc) => {
                 
               const currentFree = acc.data.free;
+              this.logger.debug(`Balance Change Detection for account ${subscription.address} | previous free balance: ${freeBalance[subscription.address]} | current free balance: ${currentFree} with ${acc.data.reserved} reserved | nonce: ${acc.nonce}`)              
 
                 if (this.initializedBalanceSubscriptions[subscription.name]) {
                     const data: TransactionData = {

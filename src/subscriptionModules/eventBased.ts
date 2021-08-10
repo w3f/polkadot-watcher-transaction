@@ -58,9 +58,9 @@ export class EventBased implements ISubscriptionModule{
     }
 
     private _balanceTransferHandler = async (event: Event): Promise<boolean> => {
-      this.logger.debug('Balances Transfer Event Received')
+      //this.logger.debug('Balances Transfer Event Received')
       const transferInfo = extractTransferInfoFromEvent(event)
-      this.logger.debug(`${JSON.stringify(transferInfo)}`)
+      //this.logger.debug(`${JSON.stringify(transferInfo)}`)
       const {from,to,amount} = transferInfo
 
       let isNewNotificationTriggered = false

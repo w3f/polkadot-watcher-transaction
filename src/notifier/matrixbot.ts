@@ -106,7 +106,7 @@ export class Matrixbot implements Notifier {
         const result = await got.post(this.endpoint, { json });
         return result.body;
       } catch (error) {
-        this.logger.error(`could not notify Transfer Event: ${error.message}`);
+        this.logger.error(`could not send the notification: ${error.message}`);
         return error.message
       }
     }
