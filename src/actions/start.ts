@@ -20,6 +20,15 @@ const _startServer = (port: number): express.Application =>{
   return server
 }
 
+const _addTestEndpoint = (server: express.Application, subscriber: Subscriber): void =>{
+ 
+  server.get('/test',
+      async (req: express.Request, res: express.Response): Promise<void> => {
+          const result = await subscriber.triggerTestTransaction()
+          res.status(200).send(result)
+      })
+}
+
 export const startAction = async (cmd): Promise<void> =>{
     const cfg = new Config<InputConfig>().parse(cmd.config);
     
@@ -37,4 +46,7 @@ export const startAction = async (cmd): Promise<void> =>{
 
     const subscriber = new Subscriber(cfg,notifier,cache,logger);
     await subscriber.start();
+
+    _addTestEndpoint(server,subscriber)
+
 }

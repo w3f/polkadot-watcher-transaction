@@ -2,7 +2,7 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import { Text } from '@polkadot/types/primitive';
 import {
-    InputConfig, SubscriberConfig
+    InputConfig, SubscriberConfig, TransactionData, TransactionType
 } from './types';
 import { EventBased } from './subscriptionModules/eventBased';
 import { BalanceChangeBased } from './subscriptionModules/balanceChangeBased';
@@ -10,6 +10,7 @@ import { BlockBased } from './subscriptionModules/blockBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
 import { Cache } from './cache';
 import { Notifier } from './notifier/INotifier';
+import { ZeroBalance } from './constants';
 
 export class Subscriber {
     private chain: Text;
@@ -54,6 +55,25 @@ export class Subscriber {
         this.config.modules?.transferExtrinsic?.enabled != false && this.blockBased.subscribe()
         this.config.modules?.balanceChange?.enabled != false && this.balanceChangeBased.subscribe()
         this.config.modules?.transferEvent?.enabled != false && this.eventBased.subscribe();
+    }
+
+    public triggerTestTransaction = async (): Promise<boolean> => {
+
+      const data: TransactionData = {
+        name: "TestName",
+        address: "TestAddress",
+        hash: "TestHash",
+        networkId: this.networkId,
+        txType: TransactionType.Sent,
+        amount: ZeroBalance
+      };
+
+      try {
+        await this.notifier.newTransaction(data)
+        return true
+      } catch (error) {
+        return false
+      } 
     }
 
     private _initAPI = async (): Promise<void> =>{
