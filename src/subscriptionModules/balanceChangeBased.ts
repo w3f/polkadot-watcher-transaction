@@ -50,7 +50,10 @@ export class BalanceChangeBased implements ISubscriptionModule{
 
             await this.api.query.system.account(subscription.address, async (acc) => {
                 
-              const currentFree = acc.data.free;
+              // *** to fix a @polkadot/api anomaly caused by multiple balance increases causing also an additional balance decrease detection, it's better to take the free value quering from the storage again
+              // const currentFree = acc.data.free;
+              const currentFree = (await this.api.query.system.account(subscription.address)).data.free
+              // ******
               this.logger.debug(`Balance Change Detection for account ${subscription.address} | previous free balance: ${freeBalance[subscription.address]} | current free balance: ${currentFree} with ${acc.data.reserved} reserved | nonce: ${acc.nonce}`)              
 
                 if (this.initializedBalanceSubscriptions[subscription.name]) {
