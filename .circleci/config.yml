@@ -3,7 +3,7 @@ version: 2
 jobs:
   helmLint:
     docker:
-      - image: web3f/ci-commons:v2.4.6
+      - image: web3f/ci-commons:v2.4.4
     steps:
       - checkout
       - run:
@@ -32,19 +32,19 @@ jobs:
 
   buildImage:
     docker:
-      - image: web3f/ci-commons:v2.4.6
+      - image: web3f/ci-commons:v2.4.4
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 20.10.7
+          version: 19.03.13
       - run:
           command: |
             /scripts/build-image.sh web3f/polkadot-watcher-transaction .
 
   publishImage:
     docker:
-      - image: web3f/ci-commons:v2.4.6
+      - image: web3f/ci-commons:v2.4.4
     steps:
       - checkout
       - setup_remote_docker
@@ -54,7 +54,7 @@ jobs:
 
   publishChart:
     docker:
-      - image: web3f/ci-commons:v2.4.6
+      - image: web3f/ci-commons:v2.4.4
     steps:
       - checkout
       - run:
@@ -63,7 +63,7 @@ jobs:
 
   integrationTests:
     docker:
-      - image: web3f/ci-commons:v2.4.6
+      - image: web3f/ci-commons:v2.4.4
     steps:
       - checkout
       - setup_remote_docker
@@ -75,7 +75,11 @@ jobs:
 workflows:
   version: 2
   test_and_deploy:
-    jobs:  
+    jobs:
+      - unitTest:
+          filters:
+            tags:
+              only: /.*/
       - helmLint:
           filters:
             tags:
@@ -83,14 +87,7 @@ workflows:
       - yarnLint:
           filters:
             tags:
-              only: /.*/   
-      - unitTest:
-          filters:
-            tags:
-              only: /.*/
-          requires:
-              - unitTest
-              - helmLint               
+              only: /.*/        
       - buildImage:
           context: dockerhub-bot
           filters:
@@ -98,6 +95,8 @@ workflows:
               only: /.*/
           requires:
             - unitTest
+            - helmLint
+            - yarnLint
       - integrationTests:
           filters:
             tags:
