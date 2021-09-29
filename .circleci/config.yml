@@ -75,14 +75,7 @@ jobs:
 workflows:
   version: 2
   test_and_deploy:
-    jobs:
-      - unitTest:
-          filters:
-            tags:
-              only: /.*/
-        requires:
-            - unitTest
-            - helmLint   
+    jobs:  
       - helmLint:
           filters:
             tags:
@@ -90,7 +83,14 @@ workflows:
       - yarnLint:
           filters:
             tags:
-              only: /.*/        
+              only: /.*/   
+      - unitTest:
+          filters:
+            tags:
+              only: /.*/
+          requires:
+              - unitTest
+              - helmLint               
       - buildImage:
           context: dockerhub-bot
           filters:
