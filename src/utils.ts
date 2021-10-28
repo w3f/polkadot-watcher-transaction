@@ -74,13 +74,13 @@ export const asyncForEach = async < T extends {} > (array: Array<T>, callback: (
   }
 }
 
-export const isTransferBalancesExtrinsic = (extrinsic: Extrinsic): boolean => {
-  return isTransferBalance(extrinsic.method)
-}
-
 export const isTransferBalance = (json: any): boolean => {
   const { method, section } = json;
   return section == 'balances' && ( method == 'transfer' || method == 'transferKeepAlive' || method == 'transferAll' )
+}
+
+export const isTransferBalancesExtrinsic = (extrinsic: Extrinsic): boolean => {
+  return isTransferBalance(extrinsic.method)
 }
 
 export const isBatchExtrinsic = (extrinsic: Extrinsic): boolean => {

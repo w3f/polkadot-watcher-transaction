@@ -64,7 +64,7 @@ export class BlockBased implements ISubscriptionModule {
     }
 
     private _transferBalancesExtrinsicHandler = async (extrinsic: Extrinsic, blockHash: string): Promise<boolean> =>{
-      let isNewNotificationTriggered = false
+      const isNewNotificationTriggered = false
       if(!isTransferBalancesExtrinsic(extrinsic)) return isNewNotificationTriggered
       this.logger.debug(`detected new balances > transfer extrinsic`)
 
@@ -154,7 +154,7 @@ export class BlockBased implements ISubscriptionModule {
       await this.notifier.newTransaction(data) 
     }
 
-    private _formatArgAmount = ( transferType: string, arg: any) => {
+    private _formatArgAmount = ( transferType: string, arg: any): string => {
       if(transferType == "transferAll"){
         return "FULL AMOUNT"
       }
