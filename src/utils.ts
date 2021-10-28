@@ -85,7 +85,7 @@ export const isTransferBalance = (json: any): boolean => {
 
 export const isBatchExtrinsic = (extrinsic: Extrinsic): boolean => {
   const { method: { method, section } } = extrinsic;
-  return section == 'utility' && ( method == 'batch' || method == 'batch_all' )
+  return section == 'utility' && ( method == 'batch' || method == 'batchAll' )
 }
 
 export const isBalanceTransferEvent = (event: Event): boolean => {
