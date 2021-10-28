@@ -5,6 +5,7 @@ import {
 } from '../types';
 import { Event } from '@polkadot/types/interfaces';
 import { extractTransferInfoFromEvent, getSubscriptionNotificationConfig, isBalanceTransferEvent } from '../utils';
+import { formatBalance } from '@polkadot/util/format/formatBalance'
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Cache } from '../cache';
 import { Notifier } from '../notifier/INotifier';
@@ -79,7 +80,7 @@ export class EventBased implements ISubscriptionModule{
           address: from,
           networkId: this.networkId,
           txType: TransactionType.Sent,
-          amount: amount
+          amount: formatBalance(amount,{forceUnit: '-'},this.api.registry.chainDecimals[0])
         };
 
         const notificationConfig = getSubscriptionNotificationConfig(this.config.modules?.transferEvent,this.subscriptions.get(from).transferEvent)
@@ -100,7 +101,7 @@ export class EventBased implements ISubscriptionModule{
           address: to,
           networkId: this.networkId,
           txType: TransactionType.Received,
-          amount: amount
+          amount: formatBalance(amount,{forceUnit: '-'},this.api.registry.chainDecimals[0])
         };
 
         const notificationConfig = getSubscriptionNotificationConfig(this.config.modules?.transferEvent,this.subscriptions.get(to).transferEvent)

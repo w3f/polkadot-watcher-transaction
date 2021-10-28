@@ -10,7 +10,6 @@ import { BlockBased } from './subscriptionModules/blockBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
 import { Cache } from './cache';
 import { Notifier } from './notifier/INotifier';
-import { ZeroBalance } from './constants';
 
 export class Subscriber {
     private chain: Text;
@@ -65,7 +64,7 @@ export class Subscriber {
         hash: "TestHash",
         networkId: this.networkId,
         txType: TransactionType.Sent,
-        amount: ZeroBalance
+        amount: "0 Unit"
       };
 
       try {

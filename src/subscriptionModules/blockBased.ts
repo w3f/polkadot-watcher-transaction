@@ -3,8 +3,9 @@ import { Logger } from '@w3f/logger';
 import {
     TransactionData, TransactionType, SubscriberConfig, Subscribable
 } from '../types';
-import { Extrinsic, Header } from '@polkadot/types/interfaces';
-import { getSubscriptionNotificationConfig, isTransferBalancesExtrinsic } from '../utils';
+import { Extrinsic, Header, Balance, Address } from '@polkadot/types/interfaces';
+import { formatBalance } from '@polkadot/util/format/formatBalance'
+import { getSubscriptionNotificationConfig, isBatchExtrinsic, isTransferBalance, isTransferBalancesExtrinsic } from '../utils';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Notifier } from '../notifier/INotifier';
 
@@ -52,13 +53,12 @@ export class BlockBased implements ISubscriptionModule {
 
       const hash = header.hash.toHex()
       const block = await this.api.rpc.chain.getBlock(hash)
-      this.logger.debug(`block:`)
-      this.logger.debug(JSON.stringify(block))
+      //this.logger.debug(`block:`)
+      //this.logger.debug(JSON.stringify(block))
 
       block.block.extrinsics.forEach( async (extrinsic) => {
-
         this._transferBalancesExtrinsicHandler(extrinsic, hash)
-  
+        this._batchedTransferBalancesExtrinsicHandler(extrinsic, hash)
       })
 
     }
@@ -68,12 +68,36 @@ export class BlockBased implements ISubscriptionModule {
       if(!isTransferBalancesExtrinsic(extrinsic)) return isNewNotificationTriggered
       this.logger.debug(`detected new balances > transfer extrinsic`)
 
-      const { signer, method: { args } } = extrinsic;
+      return this._transferBalancesInnerCallHandler(extrinsic.method,extrinsic.signer,blockHash,extrinsic.hash.toHex())
+    }
+
+    private _batchedTransferBalancesExtrinsicHandler = async (extrinsic: Extrinsic, blockHash: string): Promise<boolean> =>{
+      let isNewNotificationTriggered = false
+      if(!isBatchExtrinsic(extrinsic)) return isNewNotificationTriggered
+      this.logger.debug(`detected new utility > batch extrinsic`)
+
+      const { signer, hash, method: { args } } = extrinsic;
+
+      for (const innerCall of args[0] as any) {
+        if(!isTransferBalance(innerCall.toJSON())) {
+          this.logger.debug(`detected new utility > batch > balances > transfer extrinsic`)
+          isNewNotificationTriggered = await this._transferBalancesInnerCallHandler(innerCall,signer,blockHash,hash.toHex())
+        } 
+      }
+
+      return isNewNotificationTriggered
+    }
+
+    private _transferBalancesInnerCallHandler = async (innerCall: any, signer: Address,  blockHash: string, transactionHash: string): Promise<boolean> =>{
+      let isNewNotificationTriggered = false
+
+      const { args, method } = innerCall
+
       const sender = signer.toString()
       const receiver = args[0].toString()
-      const unit = args[1].toString()
-      const transactionHash = extrinsic.hash.toHex()
-      this.logger.debug(`\nsender: ${sender}\nreceiver: ${receiver}\nunit: ${unit}\nblockHash: ${blockHash}\ntransactionHash: ${transactionHash}`)
+      const amount = this._formatArgAmount(method,args[1])
+
+      this.logger.debug(`\nsender: ${sender}\nreceiver: ${receiver}\nunit: ${amount}\nblockHash: ${blockHash}\ntransactionHash: ${transactionHash}`)
 
       if(this.subscriptions.has(sender)){
         const data: TransactionData = {
@@ -81,7 +105,8 @@ export class BlockBased implements ISubscriptionModule {
           address: sender,
           networkId: this.networkId,
           txType: TransactionType.Sent,
-          hash: transactionHash
+          hash: transactionHash,
+          amount: amount
         };
 
         const notificationConfig = getSubscriptionNotificationConfig(this.config.modules?.transferExtrinsic,this.subscriptions.get(sender).transferExtrinsic)
@@ -103,7 +128,8 @@ export class BlockBased implements ISubscriptionModule {
           address: receiver,
           networkId: this.networkId,
           txType: TransactionType.Received,
-          hash: transactionHash
+          hash: transactionHash,
+          amount: amount
         };
 
         const notificationConfig = getSubscriptionNotificationConfig(this.config.modules?.transferExtrinsic,this.subscriptions.get(receiver).transferExtrinsic)
@@ -126,6 +152,14 @@ export class BlockBased implements ISubscriptionModule {
       this.logger.debug(`Delegating to the Notifier the New Transfer Balance Extrinsic notification...`)
       this.logger.debug(JSON.stringify(data))
       await this.notifier.newTransaction(data) 
+    }
+
+    private _formatArgAmount = ( transferType: string, arg: any) => {
+      if(transferType == "transferAll"){
+        return "FULL AMOUNT"
+      }
+      const amount = arg as unknown as Balance
+      return formatBalance(amount,{forceUnit: '-'},this.api.registry.chainDecimals[0])
     }
  
 }

@@ -56,10 +56,10 @@ export class Matrixbot implements Notifier {
         let description: string;
         let alertname: string;
         if (data.txType === TransactionType.Sent) {
-            description = `Finalization confirmation: new transaction sent from the account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
+            description = `New Transfer of ${data.amount} sent from the account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
             alertname = 'TransactionSent';
         } else {
-            description = `Finalization confirmation: new transaction received in the account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
+            description = `New Transfer of ${data.amount} received in the account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
             alertname = 'TransactionReceived';
         }
         msg.alerts[0].labels.alertname = alertname;
@@ -88,10 +88,10 @@ export class Matrixbot implements Notifier {
       let description: string;
       let alertname: string;
       if (data.txType === TransactionType.Sent) {
-          description = `New Transfer of ${data.amount.toHuman()} sent from the account ${data.name}, check https://${data.networkId}.subscan.io/account/${data.address}?tab=transfer for details.`;
+          description = `New Transfer of ${data.amount} sent from the account ${data.name}, check https://${data.networkId}.subscan.io/account/${data.address}?tab=transfer for details.`;
           alertname = 'TransferSent';
       } else {
-          description = `New Transfer of ${data.amount.toHuman()} received in the account ${data.name}, check https://${data.networkId}.subscan.io/account/${data.address}?tab=transfer for details.`;
+          description = `New Transfer of ${data.amount} received in the account ${data.name}, check https://${data.networkId}.subscan.io/account/${data.address}?tab=transfer for details.`;
           alertname = 'TransferReceived';
       }
       msg.alerts[0].labels.alertname = alertname;
