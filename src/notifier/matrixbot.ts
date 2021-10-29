@@ -50,16 +50,15 @@ export class Matrixbot implements Notifier {
     }
 
     protected _transactionMsg = (data: TransactionData): MatrixbotMsg =>{
-        //TODO: this functionality is not ready to be used
         const msg = _.cloneDeep(MsgTemplate)
 
         let description: string;
         let alertname: string;
         if (data.txType === TransactionType.Sent) {
-            description = `New Transfer of ${data.amount} sent from the account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
+            description = `New Transfer of ${data.amount} sent from the account ${data.name}, check https://${data.networkId}.subscan.io/extrinsic/${data.hash} for details`;
             alertname = 'TransactionSent';
         } else {
-            description = `New Transfer of ${data.amount} received in the account ${data.name}, check https://polkascan.io/${data.networkId}/transaction/${data.hash} for details`;
+            description = `New Transfer of ${data.amount} received in the account ${data.name}, check https://${data.networkId}.subscan.io/extrinsic/${data.hash} for details`;
             alertname = 'TransactionReceived';
         }
         msg.alerts[0].labels.alertname = alertname;

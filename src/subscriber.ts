@@ -75,6 +75,25 @@ export class Subscriber {
       } 
     }
 
+    public triggerTestTransfer = async (): Promise<boolean> => {
+
+      const data: TransactionData = {
+        name: "TestName",
+        address: "TestAddress",
+        hash: "TestHash",
+        networkId: this.networkId,
+        txType: TransactionType.Sent,
+        amount: "0 Unit"
+      };
+
+      try {
+        await this.notifier.newTransfer(data)
+        return true
+      } catch (error) {
+        return false
+      } 
+    }
+
     private _initAPI = async (): Promise<void> =>{
         const provider = new WsProvider(this.endpoint);
 

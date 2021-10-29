@@ -22,11 +22,17 @@ const _startServer = (port: number): express.Application =>{
 
 const _addTestEndpoint = (server: express.Application, subscriber: Subscriber): void =>{
  
-  server.get('/test',
+  server.get('/test-event',
+      async (req: express.Request, res: express.Response): Promise<void> => {
+          const result = await subscriber.triggerTestTransfer()
+          res.status(200).send(result)
+      })
+
+  server.get('/test-extrinsic',
       async (req: express.Request, res: express.Response): Promise<void> => {
           const result = await subscriber.triggerTestTransaction()
           res.status(200).send(result)
-      })
+      })    
 }
 
 export const startAction = async (cmd): Promise<void> =>{

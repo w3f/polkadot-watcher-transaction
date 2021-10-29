@@ -18,10 +18,11 @@ const receiverName = 'receiverName';
 const receiverAddress = 'receiverAddress';
 const networkId = 'networkId';
 const txHash = 'txHash';
+const amount = '100'
 
-const expectedSentMessage = `Finalization confirmation: new transaction sent from the account ${senderName}, check https://polkascan.io/${networkId}/transaction/${txHash} for details`;
+const expectedSentMessage = `New Transfer of ${amount} sent from the account ${senderName}, check https://${networkId}.subscan.io/extrinsic/${txHash} for details`;
 const expectedSentAlertname = 'TransactionSent';
-const expectedReceivedMessage = `Finalization confirmation: new transaction received in the account ${receiverName}, check https://polkascan.io/${networkId}/transaction/${txHash} for details`;
+const expectedReceivedMessage = `New Transfer of ${amount} received in the account ${receiverName}, check https://${networkId}.subscan.io/extrinsic/${txHash} for details`;
 const expectedReceivedAlertname = 'TransactionReceived';
 
 const getExpectedBalanceChangeMessage = (name: string,address: string): string => `New Balance Change detected (i.e. staking rewards, transfers, ...) for the account ${name}, check https://${networkId}.subscan.io/account/${address}?tab=reward for details.`;
@@ -56,7 +57,8 @@ describe('Matrixbot', () => {
               txType: TransactionType.Sent,
               address: senderAddress,
               networkId: networkId,
-              hash: txHash
+              hash: txHash,
+              amount: amount
           };
 
           await subject.newBalanceChange(data);
@@ -70,7 +72,8 @@ describe('Matrixbot', () => {
               txType: TransactionType.Received,
               address: receiverAddress,
               networkId: networkId,
-              hash: txHash
+              hash: txHash,
+              amount: amount
           };
 
           await subject.newBalanceChange(data);
@@ -84,7 +87,8 @@ describe('Matrixbot', () => {
               txType: TransactionType.Sent,
               address: senderAddress,
               networkId: networkId,
-              hash: txHash
+              hash: txHash,
+              amount: amount
           };
 
           await subject.newTransaction(data);
@@ -98,7 +102,8 @@ describe('Matrixbot', () => {
               txType: TransactionType.Received,
               address: receiverAddress,
               networkId: networkId,
-              hash: txHash
+              hash: txHash,
+              amount: amount
           };
 
           await subject.newTransaction(data);

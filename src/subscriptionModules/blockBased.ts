@@ -3,7 +3,7 @@ import { Logger } from '@w3f/logger';
 import {
     TransactionData, TransactionType, SubscriberConfig, Subscribable
 } from '../types';
-import { Extrinsic, Header, Balance, Address } from '@polkadot/types/interfaces';
+import { Extrinsic, Header, Balance, Address, SignedBlock } from '@polkadot/types/interfaces';
 import { formatBalance } from '@polkadot/util/format/formatBalance'
 import { getSubscriptionNotificationConfig, isBatchExtrinsic, isTransferBalance, isTransferBalancesExtrinsic } from '../utils';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
@@ -57,16 +57,19 @@ export class BlockBased implements ISubscriptionModule {
       //this.logger.debug(JSON.stringify(block))
 
       block.block.extrinsics.forEach( async (extrinsic) => {
-        this._transferBalancesExtrinsicHandler(extrinsic, hash)
+        this._transferBalancesExtrinsicHandler(extrinsic, block, hash)
         this._batchedTransferBalancesExtrinsicHandler(extrinsic, hash)
       })
 
     }
 
-    private _transferBalancesExtrinsicHandler = async (extrinsic: Extrinsic, blockHash: string): Promise<boolean> =>{
+    private _transferBalancesExtrinsicHandler = async (extrinsic: Extrinsic, block: SignedBlock, blockHash: string): Promise<boolean> =>{
       const isNewNotificationTriggered = false
       if(!isTransferBalancesExtrinsic(extrinsic)) return isNewNotificationTriggered
       this.logger.debug(`detected new balances > transfer extrinsic`)
+
+      this.logger.debug(`Extrinsic: ${JSON.stringify(extrinsic.toHuman())}`)
+      this.logger.debug(`Block: ${JSON.stringify(block.toHuman())}`)
 
       return this._transferBalancesInnerCallHandler(extrinsic.method,extrinsic.signer,blockHash,extrinsic.hash.toHex())
     }
