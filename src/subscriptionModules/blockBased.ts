@@ -76,11 +76,12 @@ export class BlockBased implements ISubscriptionModule {
       let isNewNotificationTriggered = false
       if(!isBatchExtrinsic(extrinsic)) return isNewNotificationTriggered
       this.logger.debug(`detected new utility > batch extrinsic`)
+      //this.logger.debug(`EXTRINSIC: ${JSON.stringify(extrinsic.toHuman())}`)
 
       const { signer, hash, method: { args } } = extrinsic;
 
       for (const innerCall of args[0] as any) {
-        if(!isTransferBalance(innerCall.toJSON())) {
+        if(isTransferBalance(innerCall)) {
           this.logger.debug(`detected new utility > batch > balances > transfer extrinsic`)
           isNewNotificationTriggered = await this._transferBalancesInnerCallHandler(innerCall,signer,blockHash,hash.toHex())
         } 
