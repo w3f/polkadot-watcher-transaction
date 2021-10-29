@@ -8,6 +8,9 @@ import {
 import { Notifier } from './INotifier';
 import { Matrixbot } from './matrixbot';
 
+/*
+This implementation sends serial messages with a minimum MessageDelay time delay
+*/
 export class MatrixbotSerial extends Matrixbot implements Notifier {
   private _store: MatrixbotMsg[] = [];
 

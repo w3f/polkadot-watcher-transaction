@@ -6,6 +6,10 @@ import {
 import { Notifier } from './INotifier';
 import { Matrixbot } from './matrixbot';
 
+/*
+This implementation remove identical messages present in a
+configurable noDuplicatesWindow time window 
+*/
 export class MatrixbotNoDuplicates extends Matrixbot implements Notifier {
   private _storePending = new Set<string>();
   private _storeToBeSent = new Set<string>();

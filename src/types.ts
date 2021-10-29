@@ -50,7 +50,7 @@ export interface TransactionData extends Subscribable {
   txType?: TransactionType;
   networkId: string;
   hash?: string;
-  amount?: Balance;
+  amount?: string;
 }
 
 export interface TransferInfo {
