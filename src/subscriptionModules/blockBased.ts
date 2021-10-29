@@ -3,11 +3,12 @@ import { Logger } from '@w3f/logger';
 import {
     TransactionData, TransactionType, SubscriberConfig, Subscribable
 } from '../types';
-import { Extrinsic, Header, Balance, Address } from '@polkadot/types/interfaces';
-import { formatBalance } from '@polkadot/util/format/formatBalance'
-import { getSubscriptionNotificationConfig, isBatchExtrinsic, isTransferBalance, isTransferBalancesExtrinsic } from '../utils';
+import { Extrinsic, Header, Balance, Address, CodecHash, SignedBlock} from '@polkadot/types/interfaces';
+import { formatBalance } from '@polkadot/util'
+import { getSubscriptionNotificationConfig, isBatchCall, isBatchExtrinsic, isMultisigExtrinsic, isTransferBalance, isTransferBalancesExtrinsic } from '../utils';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Notifier } from '../notifier/INotifier';
+import { AnyTuple } from '@polkadot/types/types';
 
 
 export class BlockBased implements ISubscriptionModule {
@@ -59,6 +60,7 @@ export class BlockBased implements ISubscriptionModule {
       block.block.extrinsics.forEach( async (extrinsic) => {
         this._transferBalancesExtrinsicHandler(extrinsic, hash)
         this._batchedTransferBalancesExtrinsicHandler(extrinsic, hash)
+        this._multisigTransferBalancesExtrinsicHandler(extrinsic, block, hash)
       })
 
     }
@@ -72,6 +74,20 @@ export class BlockBased implements ISubscriptionModule {
       return this._transferBalancesInnerCallHandler(extrinsic.method,extrinsic.signer,blockHash,extrinsic.hash.toHex())
     }
 
+    private _handleBatchedCalls = async (calls: AnyTuple, signer: Address, hash: CodecHash, blockHash: string): Promise<boolean> =>{
+      let isNewNotificationTriggered = false
+
+      for (const call of calls[0] as any) {
+        const c = this.api.registry.createType('Call',call)
+        if(isTransferBalance(c)) {
+          this.logger.debug(`detected new utility > batch > balances > transfer extrinsic`)
+          isNewNotificationTriggered = await this._transferBalancesInnerCallHandler(c,signer,blockHash,hash.toHex())
+        } 
+      }
+
+      return isNewNotificationTriggered
+    }
+
     private _batchedTransferBalancesExtrinsicHandler = async (extrinsic: Extrinsic, blockHash: string): Promise<boolean> =>{
       let isNewNotificationTriggered = false
       if(!isBatchExtrinsic(extrinsic)) return isNewNotificationTriggered
@@ -80,11 +96,35 @@ export class BlockBased implements ISubscriptionModule {
 
       const { signer, hash, method: { args } } = extrinsic;
 
-      for (const innerCall of args[0] as any) {
-        if(isTransferBalance(innerCall)) {
-          this.logger.debug(`detected new utility > batch > balances > transfer extrinsic`)
-          isNewNotificationTriggered = await this._transferBalancesInnerCallHandler(innerCall,signer,blockHash,hash.toHex())
-        } 
+      isNewNotificationTriggered = await this._handleBatchedCalls(args,signer,hash,blockHash)
+
+      return isNewNotificationTriggered
+    }
+
+    private _multisigTransferBalancesExtrinsicHandler = async (extrinsic: Extrinsic, signedBlock: SignedBlock, blockHash: string): Promise<boolean> =>{
+      
+      let isNewNotificationTriggered = false
+      if(!isMultisigExtrinsic(extrinsic)) return isNewNotificationTriggered
+      this.logger.debug(`detected new multisig > asMulti extrinsic`)
+      
+      this.logger.debug(`BLOCK : ${JSON.stringify(signedBlock.toHuman())}`)
+      this.logger.debug(`EXTRINSIC: ${JSON.stringify(extrinsic.toHuman())}`)
+
+      const { signer, hash, method: { args } } = extrinsic;
+      // https://github.com/polkadot-js/api/issues/3667
+      let decodedCall = this.api.registry.createType('Call', args[3].toU8a(true))
+      this.logger.debug(`DECODED CALL : ${JSON.stringify(decodedCall.toHuman())}`)
+
+      if(decodedCall.method == 'asMultiThreshold1'){
+        decodedCall = this.api.registry.createType('Call',decodedCall.args[1])
+      } 
+
+      if(isTransferBalance(decodedCall)){
+        this.logger.debug(`detected new multisig > asMulti > balances > transfer extrinsic`)
+        isNewNotificationTriggered = await this._transferBalancesInnerCallHandler(decodedCall,signer,blockHash,hash.toHex())
+      } else if(isBatchCall(decodedCall)){
+        this.logger.debug(`detected new multisig > asMulti > utility > batch extrinsic`)
+        isNewNotificationTriggered = await this._handleBatchedCalls(decodedCall.args,signer,hash,blockHash)
       }
 
       return isNewNotificationTriggered

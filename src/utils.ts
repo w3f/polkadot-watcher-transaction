@@ -83,9 +83,18 @@ export const isTransferBalancesExtrinsic = (extrinsic: Extrinsic): boolean => {
   return isTransferBalance(extrinsic.method)
 }
 
-export const isBatchExtrinsic = (extrinsic: Extrinsic): boolean => {
-  const { method: { method, section } } = extrinsic;
+export const isBatchCall = (json: any): boolean => {
+  const { method, section } = json;
   return section == 'utility' && ( method == 'batch' || method == 'batchAll' )
+}
+
+export const isBatchExtrinsic = (extrinsic: Extrinsic): boolean => {
+  return isBatchCall(extrinsic.method)
+}
+
+export const isMultisigExtrinsic = (extrinsic: Extrinsic): boolean => {
+  const { method: { method, section } } = extrinsic;
+  return section == 'multisig' && ( method == 'asMulti' )
 }
 
 export const isBalanceTransferEvent = (event: Event): boolean => {
