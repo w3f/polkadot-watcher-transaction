@@ -201,7 +201,7 @@ export class BlockBased implements ISubscriptionModule {
 
         const notificationConfig = getSubscriptionNotificationConfig(this.config.modules?.transferExtrinsic,this.subscriptions.get(receiver).transferExtrinsic)
         
-        if(notificationConfig.sent){
+        if(notificationConfig.received){
           this.logger.info(`Transfer Balance Extrinsic block to ${receiver} detected`)
           await this._notifyNewTransaction(data)
           isNewNotificationTriggered = true
