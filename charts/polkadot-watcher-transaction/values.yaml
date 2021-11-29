@@ -13,11 +13,11 @@ config:
   subscriber:
     modules:
       transferEventScanner:
-      enabled: true
-      sent: true
-      received: true
-      dataDir: "/app/data"
-      scanIntervalMillis: 600000
+        enabled: true
+        sent: true
+        received: true
+        dataDir: "/app/data"
+        scanIntervalMillis: 600000
     subscriptions: 
     - name: faucet
       address: EaG2CRhJWPb7qmdcJvy3LiWdh26Jreu9Dx6R1rXxPmYXoDk 

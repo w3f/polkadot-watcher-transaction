@@ -49,7 +49,7 @@ spec:
         configMap:
           name: {{ .Release.Name }}
       - name: data
-      {{ if and (ne .Values.environment "ci") (eq .Values.config.subscriber.transferEventScanner.enabled true) }} 
+      {{ if and (ne .Values.environment "ci") (eq .Values.config.subscriber.modules.transferEventScanner.enabled true) }} 
         persistentVolumeClaim:
           claimName: {{ .Release.Name }}
       {{ else }}
