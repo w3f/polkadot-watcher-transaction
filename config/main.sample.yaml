@@ -3,18 +3,15 @@ port: 3000
 logLevel: info
 matrixbot:
   endpoint: "http://matrixbot:8080/skill/eventmanager/webhook"
-  strategy: "NoDuplicates"
-  noDuplicatesWindow: 5000
+  strategy: "Default"
 subscriber:
   modules:
-    transferEvent:
+    transferEventScanner:
       enabled: true
       sent: true
       received: true
-    balanceChange:
-      enabled: true
-    transferExtrinsic:
-      enabled: false
+      dataDir: "./data"
+      scanInterval: 600000
   subscriptions:
   - name: faucet
     address: Edyfdyoi4KJVdXUJ3SU3nuZYMpg13HHa1SWYtPDCV8UPdxy 

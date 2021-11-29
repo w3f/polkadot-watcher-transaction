@@ -16,26 +16,10 @@ export class NotifierMock implements Notifier{
     private _receivedBalanceChanges: Array<TransactionData> = [];
     private _receivedTransferEvents: Array<TransactionData> = [];
 
-    get receivedTransactionsExtrinsic(): Array<TransactionData> {
-        return this._receivedTransactionsExtrinsic;
-    }
 
-    get receivedBalanceChanges(): Array<TransactionData> {
-      return this._receivedBalanceChanges;
-    }
 
     get receivedTransactionEvents(): Array<TransactionData> {
       return this._receivedTransferEvents;
-    }
-
-    newTransaction = async (data: TransactionData): Promise<string> =>{
-        this._receivedTransactionsExtrinsic.push(data);
-        return "";
-    }
-
-    newBalanceChange = async (data: TransactionData): Promise<string> =>{
-      this._receivedBalanceChanges.push(data);
-      return "";
     }
 
     newTransfer = async (data: TransactionData): Promise<string> =>{

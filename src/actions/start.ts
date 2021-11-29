@@ -5,7 +5,6 @@ import { Config } from '@w3f/config';
 import { Prometheus } from '../prometheus';
 import { Subscriber } from '../subscriber';
 import { InputConfig } from '../types';
-import { Cache } from '../cache';
 import { NotifierFactory } from '../notifier/NotifierFactory';
 
 const _startServer = (port: number): express.Application =>{
@@ -22,17 +21,11 @@ const _startServer = (port: number): express.Application =>{
 
 const _addTestEndpoint = (server: express.Application, subscriber: Subscriber): void =>{
  
-  server.get('/test-event',
+  server.get('/test',
       async (req: express.Request, res: express.Response): Promise<void> => {
           const result = await subscriber.triggerTestTransfer()
           res.status(200).send(result)
       })
-
-  server.get('/test-extrinsic',
-      async (req: express.Request, res: express.Response): Promise<void> => {
-          const result = await subscriber.triggerTestTransaction()
-          res.status(200).send(result)
-      })    
 }
 
 export const startAction = async (cmd): Promise<void> =>{
@@ -48,9 +41,7 @@ export const startAction = async (cmd): Promise<void> =>{
 
     const notifier = new NotifierFactory(cfg.matrixbot,logger).makeNotifier()
 
-    const cache = new Cache(logger)
-
-    const subscriber = new Subscriber(cfg,notifier,cache,logger);
+    const subscriber = new Subscriber(cfg,notifier,logger);
     await subscriber.start();
 
     _addTestEndpoint(server,subscriber)

@@ -41,8 +41,17 @@ spec:
         {{ end }}
         volumeMounts:
         - name: config
-          mountPath: /app/config
+          mountPath: /app/config  
+        - name: data
+          mountPath: {{ .Values.config.exportDir }}
       volumes:
       - name: config
         configMap:
           name: {{ .Release.Name }}
+      - name: data
+      {{ if and (ne .Values.environment "ci") (eq .Values.config.subscriber.transferEventScanner.enabled true) }} 
+        persistentVolumeClaim:
+          claimName: {{ .Release.Name }}
+      {{ else }}
+      emptyDir: {}     
+      {{ end }}     

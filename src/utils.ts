@@ -1,8 +1,9 @@
-import fs, { WriteStream } from 'fs';
+import fs, { ReadStream, WriteStream } from 'fs';
 import { Logger } from '@w3f/logger';
 import { DeriveAccountRegistration } from '@polkadot/api-derive/accounts/types';
 import { Extrinsic, Event, Balance } from '@polkadot/types/interfaces';
 import { SubscriptionModuleConfig, TransferInfo } from './types';
+import { ApiPromise } from '@polkadot/api';
 
 export const isDirEmpty = (path: string): boolean =>{
   return fs.readdirSync(path).length === 0
@@ -37,17 +38,29 @@ export const deleteFile = (filePath: string, logger: Logger): void =>{
   }
 }
 
-export const initFile = (exportDir: string,fileName: string,logger: Logger): WriteStream => {
+export const initWriteFileStream = (dirPath: string,fileName: string,logger: Logger): WriteStream => {
 
-  const filePath = `${exportDir}/${fileName}`;
+  const filePath = `${dirPath}/${fileName}`;
   const file = fs.createWriteStream(filePath);
   file.on('error', function(err) { logger.error(err.stack) });
 
   return file
 }
 
-export const closeFile = (file: WriteStream): void=> {
-  file.end();
+export const initReadFileStream = (dirPath: string,fileName: string,logger: Logger): ReadStream => {
+
+  const filePath = `${dirPath}/${fileName}`;
+  const file = fs.createReadStream(filePath);
+  file.on('error', function(err) { logger.error(err.stack) });
+
+  return file
+}
+
+export const closeFile = (file: WriteStream|ReadStream): Promise<void>=> {
+  return new Promise(resolve => {
+    file.on("close", resolve);
+    file.close();
+  });
 }
 
 export const getDisplayName = (identity: DeriveAccountRegistration): string =>{
@@ -74,33 +87,8 @@ export const asyncForEach = async < T extends {} > (array: Array<T>, callback: (
   }
 }
 
-export const isTransferBalance = (json: any): boolean => {
-  const { method, section } = json;
-  return section == 'balances' && ( method == 'transfer' || method == 'transferKeepAlive' || method == 'transferAll' )
-}
-
-export const isTransferBalancesExtrinsic = (extrinsic: Extrinsic): boolean => {
-  return isTransferBalance(extrinsic.method)
-}
-
-export const isBatchCall = (json: any): boolean => {
-  const { method, section } = json;
-  return section == 'utility' && ( method == 'batch' || method == 'batchAll' )
-}
-
-export const isBatchExtrinsic = (extrinsic: Extrinsic): boolean => {
-  return isBatchCall(extrinsic.method)
-}
-
-export const isMultisigExtrinsic = (extrinsic: Extrinsic): boolean => {
-  const { method: { method, section } } = extrinsic;
-  return section == 'multisig' && ( method == 'asMulti' )
-}
-
-export const isBalanceTransferEvent = (event: Event): boolean => {
-  //https://polkadot.js.org/docs/substrate/events#transferaccountid-accountid-balance
-  const { method, section } = event;
-  return section == 'balances' && method == 'Transfer';
+export const isBalanceTransferEvent = (event: Event, api: ApiPromise): boolean => {
+  return api.events.balances.Transfer.is(event)
 }
 
 export const extractTransferInfoFromEvent = (event: Event): TransferInfo =>{
@@ -113,7 +101,7 @@ export const extractTransferInfoFromEvent = (event: Event): TransferInfo =>{
 
 export const getSubscriptionNotificationConfig = (config: SubscriptionModuleConfig, configSpecific: SubscriptionModuleConfig): {sent: boolean; received: boolean} => {
   /*
-  Specific config is the most prioritized
+  Specific/Nested config is the most prioritized
   */
   const defaultSent = true
   const defaultReceived = true
