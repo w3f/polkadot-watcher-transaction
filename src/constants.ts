@@ -6,4 +6,4 @@ export const ZeroBalance = ZeroBN as Balance;
 export const CacheDelay = 3000 //3 seconds
 export const MessageDelay = 1000 //1 second
 export const NoDuplicatesWindow = 4000 //4 second
-export const ScanInterval = 600000 //10 minutes
+export const scanIntervalMillis = 600000 //10 minutes

@@ -19,7 +19,7 @@ export interface SubscriptionModuleConfig {
   sent?: boolean;
   received?: boolean;
   dataDir?: string;
-  scanInterval?: number;
+  scanIntervalMillis?: number;
 }
 
 export interface SubscriberConfig {

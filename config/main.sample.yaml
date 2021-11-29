@@ -11,7 +11,7 @@ subscriber:
       sent: true
       received: true
       dataDir: "./data"
-      scanInterval: 600000
+      scanIntervalMillis: 600000
   subscriptions:
   - name: faucet
     address: Edyfdyoi4KJVdXUJ3SU3nuZYMpg13HHa1SWYtPDCV8UPdxy 

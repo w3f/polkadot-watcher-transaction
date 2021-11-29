@@ -9,7 +9,7 @@ import { closeFile, delay, extractTransferInfoFromEvent, getFileNames, getSubscr
 import { formatBalance } from '@polkadot/util/format/formatBalance'
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Notifier } from '../notifier/INotifier';
-import { ScanInterval } from '../constants';
+import { scanIntervalMillis } from '../constants';
 
 export class EventScannerBased implements ISubscriptionModule{
 
@@ -19,7 +19,7 @@ export class EventScannerBased implements ISubscriptionModule{
     private readonly notifier: Notifier
     private readonly config: SubscriberConfig
     private readonly logger: Logger
-    private readonly scanInterval: number
+    private readonly scanIntervalMillis: number
     private dataDir: string;
     private dataFileName = "lastChecked.txt"
     private isScanOngoing = false //lock for concurrency
@@ -32,7 +32,7 @@ export class EventScannerBased implements ISubscriptionModule{
       this.config = params.config
       this.logger = params.logger
       this.dataDir = this.config.modules.transferEventScanner.dataDir
-      this.scanInterval = this.config.modules.transferEventScanner.scanInterval ? this.config.modules.transferEventScanner.scanInterval : ScanInterval
+      this.scanIntervalMillis = this.config.modules.transferEventScanner.scanIntervalMillis ? this.config.modules.transferEventScanner.scanIntervalMillis : scanIntervalMillis
       
       this._initSubscriptions()
     }
@@ -52,7 +52,7 @@ export class EventScannerBased implements ISubscriptionModule{
 
       this._requestNewScan() //first scan after a restart
 
-      setIntervalFunction(this.scanInterval,this._requestNewScan) //scheduled scans (i.e. every x minutes)
+      setIntervalFunction(this.scanIntervalMillis,this._requestNewScan) //scheduled scans (i.e. every x minutes)
     }
 
     private _initDataDir = async (): Promise<void> =>{
