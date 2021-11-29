@@ -6,32 +6,31 @@ import { Client, Keyring } from '@w3f/polkadot-api-client';
 import { TransactionData } from '../src/types';
 import { initClient, sendFromAToB } from './utils';
 import { TestPolkadotRPC } from '@w3f/test-utils';
-import { Extrinsic } from '@polkadot/types/interfaces';
 import { delay, isBalanceTransferEvent } from '../src/utils';
 import { Event } from '@polkadot/types/interfaces';
 import { Notifier } from '../src/notifier/INotifier';
 
 export class NotifierMock implements Notifier{
-    private _receivedTransactionsExtrinsic: Array<TransactionData> = [];
-    private _receivedBalanceChanges: Array<TransactionData> = [];
     private _receivedTransferEvents: Array<TransactionData> = [];
-
-
 
     get receivedTransactionEvents(): Array<TransactionData> {
       return this._receivedTransferEvents;
     }
 
-    newTransfer = async (data: TransactionData): Promise<string> =>{
+    newTransfer = async (data: TransactionData): Promise<boolean> =>{
       this._receivedTransferEvents.push(data);
-      return "";
+      return true;
     }
 
     resetReceivedData = (): void =>{
-        this._receivedTransactionsExtrinsic = [];
-        this._receivedBalanceChanges = [];
         this._receivedTransferEvents = [];
     }
+}
+
+export class NotifierMockBroken implements Notifier{
+  newTransfer = async (data: TransactionData): Promise<boolean> =>{
+    return false;
+  }
 }
 
 export class ExtrinsicMock {
@@ -51,61 +50,6 @@ export class ExtrinsicMock {
     this.keyring = new Keyring({ type: 'sr25519' })
   }
 
-  generateTransferExtrinsic = async (AUri: string, BUri: string): Promise<Extrinsic> =>{
-    sendFromAToB(AUri,BUri,this.keyring,this.client,true)
-    return await this.getAndCheckAndSetExtrinsic('isEqual','balances','transferKeepAlive')
-  }
-
-  generateNonTransferExtrinsic = async (): Promise<Extrinsic> =>{
-    return await this.getAndCheckAndSetExtrinsic('isNotEqual','balances','transferKeepAlive')
-  }
-
-  //TODO refactor, the name smells
-  private getAndCheckAndSetExtrinsic = async (checkLogic: string, expectedSection: string, expectedMethod: string): Promise<Extrinsic> =>{
-    let result: Extrinsic
-
-    const api = await this.client.api()
-
-    const unsubscribe = await api.rpc.chain.subscribeNewHeads(async (header) => {
-
-      const hash = header.hash.toHex()
-      const block = await api.rpc.chain.getBlock(hash)
-  
-      block.block.extrinsics.forEach( async (extrinsic) => {
-        const { method: { method, section } } = extrinsic;
-
-        switch (checkLogic) {
-          case 'isEqual':
-            if(method == expectedMethod && section == expectedSection){
-              result = extrinsic
-            }
-            break;
-          case 'isNotEqual':
-            if(method != expectedMethod || section != expectedSection){
-              result = extrinsic
-            }
-            break;  
-        
-          default:
-            if(method == expectedMethod && section == expectedSection){
-              result = extrinsic
-            }
-            break;
-        }
-
-      })
-    })
-
-    while(!result){
-      this.logger.info(`waiting for a ${expectedMethod} Extrinsic (${checkLogic}) to be produced ...`)
-      await(delay(3000))
-    }
-    await(delay(3000))
-    unsubscribe()
-    
-    return result  
-  }
-
   generateTransferEvent = async (AUri: string, BUri: string): Promise<Event> =>{
     sendFromAToB(AUri,BUri,this.keyring,this.client,true)
     return await this.getEvent()
@@ -121,7 +65,7 @@ export class ExtrinsicMock {
       events.forEach(async (record) => {
         const { event } = record;
 
-        if (isBalanceTransferEvent(event)) {
+        if (isBalanceTransferEvent(event,api)) {
           unsubscribe()
           result = event
         }

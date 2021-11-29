@@ -6,16 +6,18 @@ import { Subscriber } from '../src/subscriber';
 import {
   ExtrinsicMock,
     NotifierMock,
+    NotifierMockBroken,
 } from './mocks';
 import { TransactionType } from '../src/types';
 import { initClient, sendFromAToB  } from './utils';
-import { Cache } from '../src/cache';
-import { CacheDelay } from '../src/constants';
-import { delay } from '../src/utils';
+import { isDirExistent, rmDir } from '../src/utils';
+import { CodecHash } from '@polkadot/types/interfaces';
 
 should();
 
 let keyring: Keyring;
+
+const dataDir = "./test/data"
 
 const cfg = {
     logLevel: 'debug',
@@ -25,13 +27,21 @@ const cfg = {
         endpoint: 'some_endpoint'
     },
     subscriber: {
+      modules: {
+        transferEventScanner: {
+          enabled: true,
+          sent: true,
+          received: true,
+          dataDir: dataDir
+        }
+      },
       subscriptions: [{
             name: 'Alice',
-            address: 'HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F'
+            address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
         },
         {
             name: 'Bob',
-            address: 'FoQJpPyadYccjavVdTWxpxU7rUEaYhfLCPwXgkfD6Zat9QP'
+            address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'
         }]
     }
 };
@@ -39,21 +49,19 @@ const cfg = {
 const cfg2 = {
   ...cfg,
   subscriber: {
-    modules:{
-      transferExtrinsic: {
-        sent: false,
-        received: false
-      }
-    },
+    ...cfg.subscriber,
     subscriptions: [{
           name: 'Alice',
-          address: 'HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F',
+          address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+          transferEventScanner: {
+            sent: false,
+          }
       },
       {
           name: 'Bob',
-          address: 'FoQJpPyadYccjavVdTWxpxU7rUEaYhfLCPwXgkfD6Zat9QP',
-          balanceChange: {
-            received: false
+          address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+          transferEventScanner: {
+            received: false,
           }
       }]
   }
@@ -74,20 +82,13 @@ const sendFromAliceToBob = async (client?: Client): Promise<void> =>{
     await sendFromAToB('//Alice','//Bob',keyring,client)
 }
 
-const checkNotifiedTransactionExtrinsic = (expectedName: string, expectedTxType: TransactionType, nt: NotifierMock, expectedOutcome = true): void =>{
-    let found = false;
+const sendFromBobToAlice = async (client?: Client): Promise<void> =>{
 
-    for (const data of nt.receivedTransactionsExtrinsic) {
-        if (data.name === expectedName &&
-            data.txType === expectedTxType) {
-            found = true;
-            break;
-        }
-    }
-    if(expectedOutcome)
-      found.should.be.true; 
-    else
-    found.should.be.false; 
+  if(!client){
+    client = initClient(testRPC.endpoint())
+  }
+
+  await sendFromAToB('//Bob','//Alice',keyring,client)
 }
 
 const checkNotifiedTransactionEvent = (expectedName: string, expectedTxType: TransactionType, nt: NotifierMock, expectedOutcome = true): void =>{
@@ -106,24 +107,21 @@ const checkNotifiedTransactionEvent = (expectedName: string, expectedTxType: Tra
   found.should.be.false; 
 }
 
-const checkNotifiedBalanceChange = (expectedName: string, expectedTxType: TransactionType, nt: NotifierMock, expectedOutcome = true): void =>{
-  let found = false;
+const createCodecHash = async (client?: Client): Promise<CodecHash> =>{
 
-  for (const data of nt.receivedBalanceChanges) {
-      if (data.name === expectedName &&
-          data.txType === expectedTxType) {
-          found = true;
-          break;
-      }
+  if(!client){
+    client = initClient(testRPC.endpoint())
   }
-  if(expectedOutcome)
-    found.should.be.true;
-  else
-    found.should.be.false;  
+
+  return (await client.api()).registry.createType('CodecHash')
 }
 
-describe('Subscriber', () => {
+describe('Subscriber, with a started new chain...', () => {
   before(async () => {
+      // we are starting a chain from scratch
+      if ( isDirExistent(dataDir) ) {
+        rmDir(dataDir)
+      }
       await testRPC.start();
       keyring = new Keyring({ type: 'sr25519' });
   });
@@ -135,104 +133,84 @@ describe('Subscriber', () => {
   describe('with a started instance, cfg1', () => {
       let nt: NotifierMock
       let subject: Subscriber
-      let cache: Cache
       
       before(async () => {
           nt = new NotifierMock();
-          cache = new Cache(logger)
           cfg.endpoint = testRPC.endpoint();
-          subject = new Subscriber(cfg, nt, cache, logger);
+          subject = new Subscriber(cfg, nt, logger);
           await subject.start();
       });
 
       describe('transactions', async () => {
-          it('should notify balance changes, events, and transactions', async () => {
+          it('should notify transfer events', async () => {
               nt.resetReceivedData();
 
               await sendFromAliceToBob();
 
-              checkNotifiedBalanceChange('Alice', TransactionType.Sent, nt);
-              checkNotifiedBalanceChange('Bob', TransactionType.Received, nt);
-              checkNotifiedTransactionExtrinsic('Alice', TransactionType.Sent, nt)
-              checkNotifiedTransactionExtrinsic('Bob', TransactionType.Received, nt)
               checkNotifiedTransactionEvent('Alice', TransactionType.Sent, nt)
               checkNotifiedTransactionEvent('Bob', TransactionType.Received, nt)
           });
       });
 
       describe('transferBalancesEventHandler', async () => {
-        it('is transferBalances event, but our addresses are not involved', async () => {
+        it('is transferBalances event, our addresses are not involved so a notification is not necessary', async () => {
             const event = await extrinsicMock.generateTransferEvent('//Charlie','//Dave')
 
-            const isNewNotificationTriggered = await subject["eventBased"]["_balanceTransferHandler"](event)
+            const result = await subject["eventScannerBased"]["_balanceTransferHandler"](event,await createCodecHash())
 
-            isNewNotificationTriggered.should.be.false
+            result.should.be.true
         });
 
         it('is transferBalances event 1', async () => {
-            await delay(CacheDelay*4)
             const event = await extrinsicMock.generateTransferEvent('//Alice','//Bob')
 
-            const isNewNotificationTriggered = await subject["eventBased"]["_balanceTransferHandler"](event)
+            const result = await subject["eventScannerBased"]["_balanceTransferHandler"](event,await createCodecHash())
 
-            isNewNotificationTriggered.should.be.true
+            result.should.be.true
         });
 
         it('is transferBalances event 2', async () => {
-          await delay(CacheDelay*4)
           const event = await extrinsicMock.generateTransferEvent('//Bob','//Alice')
 
-          const isNewNotificationTriggered = await subject["eventBased"]["_balanceTransferHandler"](event)
+          
 
-          isNewNotificationTriggered.should.be.true
+          const result = await subject["eventScannerBased"]["_balanceTransferHandler"](event,await createCodecHash())
+
+          result.should.be.true
         });
+      });
+  });
+
+  describe('with a started instance, cfg1, notifier Broken...', () => {
+    let nt: NotifierMockBroken
+    let subject: Subscriber
+    
+    before(async () => {
+        nt = new NotifierMockBroken();
+        cfg.endpoint = testRPC.endpoint();
+        subject = new Subscriber(cfg, nt, logger);
+        await subject.start();
     });
 
-      describe('transferBalancesExtrinsicHandler', async () => {
-          it('is not transferBalances extrinsic', async () => {
-              const extrinsic = await extrinsicMock.generateNonTransferExtrinsic()
+    describe('transferBalancesEventHandler', async () => {
+      it('is transferBalances event, but the notifier is broken', async () => {
+          const event = await extrinsicMock.generateTransferEvent('//Alice','//Bob')
 
-              const isNewNotificationTriggered = await subject["blockBased"]["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
+          const result = await subject["eventScannerBased"]["_balanceTransferHandler"](event,await createCodecHash())
 
-              isNewNotificationTriggered.should.be.false
-          });
-
-          it('is transferBalances extrinsic, but our addresses are not involved', async () => {
-              const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Charlie','//Dave')
-
-              const isNewNotificationTriggered = await subject["blockBased"]["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
-
-              isNewNotificationTriggered.should.be.false
-          });
-
-          it('is transferBalances extrinsic 1', async () => {
-              const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Alice','//Bob')
-
-              const isNewNotificationTriggered = await subject["blockBased"]["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
-
-              isNewNotificationTriggered.should.be.true
-          });
-
-          it('is transferBalances extrinsic 2', async () => {
-            const extrinsic = await extrinsicMock.generateTransferExtrinsic('//Bob','//Alice')
-
-            const isNewNotificationTriggered = await subject["blockBased"]["_transferBalancesExtrinsicHandler"](extrinsic,extrinsic.hash.toHex())
-
-            isNewNotificationTriggered.should.be.true
-          });
+          result.should.be.false
       });
+    });
   });
 
   describe('with an started instance, cfg2', () => {
     let nt: NotifierMock
-    let cache: Cache
     
     before(async () => {
         nt = new NotifierMock();
         const cfg = cfg2
-        cache = new Cache(logger)
         cfg.endpoint = testRPC.endpoint();
-        const subject = new Subscriber(cfg, nt, cache, logger);
+        const subject = new Subscriber(cfg, nt, logger);
         await subject.start();
     });
 
@@ -241,13 +219,12 @@ describe('Subscriber', () => {
             nt.resetReceivedData();
 
             await sendFromAliceToBob();
+            checkNotifiedTransactionEvent('Alice', TransactionType.Sent, nt, false)
+            checkNotifiedTransactionEvent('Bob', TransactionType.Received, nt, false)
 
-            checkNotifiedBalanceChange('Alice', TransactionType.Sent, nt, true);
-            checkNotifiedBalanceChange('Bob', TransactionType.Received, nt, false);
-            checkNotifiedTransactionExtrinsic('Alice', TransactionType.Sent, nt, false)
-            checkNotifiedTransactionExtrinsic('Bob', TransactionType.Received, nt, false)
-            checkNotifiedTransactionEvent('Alice', TransactionType.Sent, nt, true)
-            checkNotifiedTransactionEvent('Bob', TransactionType.Received, nt, true)
+            await sendFromBobToAlice();
+            checkNotifiedTransactionEvent('Bob', TransactionType.Sent, nt, true)
+            checkNotifiedTransactionEvent('Alice', TransactionType.Received, nt, true)
         });
 
     });

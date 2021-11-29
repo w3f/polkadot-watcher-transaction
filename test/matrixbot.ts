@@ -25,10 +25,6 @@ const expectedSentAlertname = 'TransactionSent';
 const expectedReceivedMessage = `New Transfer of ${amount} received in the account ${receiverName}, check https://${networkId}.subscan.io/extrinsic/${txHash} for details`;
 const expectedReceivedAlertname = 'TransactionReceived';
 
-const getExpectedBalanceChangeMessage = (name: string,address: string): string => `New Balance Change detected (i.e. staking rewards, transfers, ...) for the account ${name}, check https://${networkId}.subscan.io/account/${address}?tab=reward for details.`;
-const expectedBalanceDecreasedAlertname = 'BalanceDecreased';
-const expectedBalanceIncreasedAlertname = 'BalanceIncreased';
-
 const mockRestNotifier = (alertname: string, message: string): void => {
   nock(host).post(`/${path}`,_.matches(
     {
@@ -49,36 +45,6 @@ describe('Matrixbot', () => {
             nock.cleanAll();
         });
 
-        it('notifies balance decreased', async () => {
-          mockRestNotifier(expectedBalanceDecreasedAlertname,getExpectedBalanceChangeMessage(senderName,senderAddress))
-
-          const data = {
-              name: senderName,
-              txType: TransactionType.Sent,
-              address: senderAddress,
-              networkId: networkId,
-              hash: txHash,
-              amount: amount
-          };
-
-          await subject.newBalanceChange(data);
-        });
-
-        it('notifies balance increased', async () => {
-          mockRestNotifier(expectedBalanceIncreasedAlertname,getExpectedBalanceChangeMessage(receiverName,receiverAddress))
-
-          const data = {
-              name: receiverName,
-              txType: TransactionType.Received,
-              address: receiverAddress,
-              networkId: networkId,
-              hash: txHash,
-              amount: amount
-          };
-
-          await subject.newBalanceChange(data);
-        });
-
         it('notifies transactions sent', async () => {
           mockRestNotifier(expectedSentAlertname,expectedSentMessage)
 
@@ -91,7 +57,7 @@ describe('Matrixbot', () => {
               amount: amount
           };
 
-          await subject.newTransaction(data);
+          await subject.newTransfer(data);
         });
 
         it('notifies transactions received', async () => {
@@ -106,7 +72,7 @@ describe('Matrixbot', () => {
               amount: amount
           };
 
-          await subject.newTransaction(data);
+          await subject.newTransfer(data);
         });
     });
 });

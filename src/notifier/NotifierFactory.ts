@@ -2,7 +2,6 @@ import { Logger } from "@w3f/logger";
 import { MatrixbotConfig } from "../types";
 import { Notifier } from "./INotifier";
 import { Matrixbot } from "./matrixbot";
-import { NoDuplicatesWindow } from "../constants";
 
 export class NotifierFactory {
   constructor(private readonly cfg: MatrixbotConfig, private readonly logger: Logger){}

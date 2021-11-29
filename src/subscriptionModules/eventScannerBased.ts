@@ -19,7 +19,7 @@ export class EventScannerBased implements ISubscriptionModule{
     private readonly notifier: Notifier
     private readonly config: SubscriberConfig
     private readonly logger: Logger
-    private readonly scanInterval: number = ScanInterval
+    private readonly scanInterval: number
     private dataDir: string;
     private dataFileName = "lastChecked.txt"
     private isScanOngoing = false //lock for concurrency
@@ -32,7 +32,7 @@ export class EventScannerBased implements ISubscriptionModule{
       this.config = params.config
       this.logger = params.logger
       this.dataDir = this.config.modules.transferEventScanner.dataDir
-      this.scanInterval = this.config.modules.transferEventScanner.scanInterval
+      this.scanInterval = this.config.modules.transferEventScanner.scanInterval ? this.config.modules.transferEventScanner.scanInterval : ScanInterval
       
       this._initSubscriptions()
     }

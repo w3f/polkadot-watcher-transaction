@@ -1,7 +1,7 @@
 import fs, { ReadStream, WriteStream } from 'fs';
 import { Logger } from '@w3f/logger';
 import { DeriveAccountRegistration } from '@polkadot/api-derive/accounts/types';
-import { Extrinsic, Event, Balance } from '@polkadot/types/interfaces';
+import { Event, Balance } from '@polkadot/types/interfaces';
 import { SubscriptionModuleConfig, TransferInfo } from './types';
 import { ApiPromise } from '@polkadot/api';
 
@@ -15,6 +15,10 @@ export const isDirExistent = (path: string): boolean =>{
 
 export const makeDir = (path: string): void =>{
   fs.mkdirSync(path)
+}
+
+export const rmDir = (path: string): void =>{
+  fs.rmdirSync(path,{recursive:true})
 }
 
 export const getFileNames = (sourceDir: string, logger: Logger): string[] =>{
