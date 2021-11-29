@@ -20,6 +20,8 @@ export interface SubscriptionModuleConfig {
   received?: boolean;
   dataDir?: string;
   scanIntervalMillis?: number;
+  retriesBeforeLeave?: number;
+  delayBeforeRetryMillis?: number;
 }
 
 export interface SubscriberConfig {

@@ -12,6 +12,8 @@ subscriber:
       received: true
       dataDir: "./data"
       scanIntervalMillis: 600000
+      retriesBeforeLeave: 5
+      delayBeforeRetryMillis: 5000
   subscriptions:
   - name: faucet
     address: Edyfdyoi4KJVdXUJ3SU3nuZYMpg13HHa1SWYtPDCV8UPdxy 

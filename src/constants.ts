@@ -3,7 +3,7 @@ import BN from 'bn.js';
 
 export const ZeroBN = new BN(0);
 export const ZeroBalance = ZeroBN as Balance;
-export const CacheDelay = 3000 //3 seconds
-export const MessageDelay = 1000 //1 second
-export const NoDuplicatesWindow = 4000 //4 second
-export const scanIntervalMillis = 600000 //10 minutes
+export const scanIntervalMillis = 300000 //5 minutes
+export const retriesBeforeLeave = 5
+export const delayBeforeRetryMillis = 5000 //5 seconds
+export const dataFileName = "lastChecked.txt"

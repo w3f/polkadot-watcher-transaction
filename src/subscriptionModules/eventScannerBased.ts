@@ -9,7 +9,7 @@ import { closeFile, delay, extractTransferInfoFromEvent, getFileNames, getSubscr
 import { formatBalance } from '@polkadot/util/format/formatBalance'
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Notifier } from '../notifier/INotifier';
-import { scanIntervalMillis } from '../constants';
+import { dataFileName, delayBeforeRetryMillis, retriesBeforeLeave, scanIntervalMillis } from '../constants';
 
 export class EventScannerBased implements ISubscriptionModule{
 
@@ -20,8 +20,11 @@ export class EventScannerBased implements ISubscriptionModule{
     private readonly config: SubscriberConfig
     private readonly logger: Logger
     private readonly scanIntervalMillis: number
-    private dataDir: string;
-    private dataFileName = "lastChecked.txt"
+    private dataDir: string
+    private dataFileName = dataFileName
+    private retriesBeforeLeave: number
+    private delayBeforeRetryMillis: number
+
     private isScanOngoing = false //lock for concurrency
     private isNewScanRequired = false
     
@@ -33,6 +36,8 @@ export class EventScannerBased implements ISubscriptionModule{
       this.logger = params.logger
       this.dataDir = this.config.modules.transferEventScanner.dataDir
       this.scanIntervalMillis = this.config.modules.transferEventScanner.scanIntervalMillis ? this.config.modules.transferEventScanner.scanIntervalMillis : scanIntervalMillis
+      this.delayBeforeRetryMillis = this.config.modules.transferEventScanner.delayBeforeRetryMillis ? this.config.modules.transferEventScanner.delayBeforeRetryMillis : delayBeforeRetryMillis
+      this.retriesBeforeLeave = this.config.modules.transferEventScanner.retriesBeforeLeave ? this.config.modules.transferEventScanner.retriesBeforeLeave : retriesBeforeLeave
       
       this._initSubscriptions()
     }
@@ -90,7 +95,6 @@ export class EventScannerBased implements ISubscriptionModule{
           await this._scanForTransferEvents()
         } catch (error) {
           this.logger.error(`last SCAN had an issue !: ${JSON.stringify(error)}`)
-          this.isNewScanRequired = true
         } finally {
           this.isScanOngoing = false
         }
@@ -126,16 +130,15 @@ export class EventScannerBased implements ISubscriptionModule{
               isBalanceTransferEvent(event,this.api)
             )) {
 
-              let retriesLeft = 3
+              let retriesBeforeLeave = this.retriesBeforeLeave
               do {
                 result = await this._balanceTransferHandler(event, hash)
                 if(!result){
-                  retriesLeft--
+                  retriesBeforeLeave--
                   this.logger.warn(`New retry at block ${blockNumber} !!`)
-                  await delay(5000)
+                  await delay(this.delayBeforeRetryMillis)
                 }
-                
-              } while (!result && retriesLeft > 0);
+              } while (!result && retriesBeforeLeave > 0);
           }
         }
 
