@@ -1,4 +1,4 @@
-{{ if eq .Values.config.subscriber.transferEventScanner.enabled true }}
+{{ if eq .Values.config.subscriber.modules.transferEventScanner.enabled true }}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
