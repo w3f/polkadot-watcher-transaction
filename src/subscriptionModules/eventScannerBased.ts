@@ -151,11 +151,7 @@ export class EventScannerBased implements ISubscriptionModule{
         }
       }
       
-      if(result){
-        this.logger.info(`\n*****\nSCAN completed at block ${await this._getLastCheckedBlock()}\n*****`)
-      }else{
-        throw `SCAN ERROR, something went wrong`
-      }
+      this.logger.info(`\n*****\nSCAN completed at block ${await this._getLastCheckedBlock()}\n*****`)
     }
 
     private _balanceTransferHandler = async (event: Event, extrinsicHash: CodecHash): Promise<boolean> => {
