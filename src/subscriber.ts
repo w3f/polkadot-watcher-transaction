@@ -4,12 +4,10 @@ import { Text } from '@polkadot/types/primitive';
 import {
     InputConfig, SubscriberConfig, TransactionData, TransactionType
 } from './types';
-import { EventBased } from './subscriptionModules/eventBased';
-import { BalanceChangeBased } from './subscriptionModules/balanceChangeBased';
-import { BlockBased } from './subscriptionModules/blockBased';
+import { EventScannerBased } from './subscriptionModules/eventScannerBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
-import { Cache } from './cache';
 import { Notifier } from './notifier/INotifier';
+
 
 export class Subscriber {
     private chain: Text;
@@ -19,14 +17,11 @@ export class Subscriber {
     private logLevel: string;
     private config: SubscriberConfig;
 
-    private blockBased: BlockBased;
-    private balanceChangeBased: BalanceChangeBased;
-    private eventBased: EventBased;
+    private eventScannerBased: EventScannerBased;
     
     constructor(
         cfg: InputConfig,
         private readonly notifier: Notifier,
-        private readonly cache: Cache,
         private readonly logger: Logger) {
         this.endpoint = cfg.endpoint;
         this.logLevel = cfg.logLevel;
@@ -51,28 +46,7 @@ export class Subscriber {
 
         if(this.logLevel === 'debug') await this._triggerDebugActions()
 
-        this.config.modules?.transferExtrinsic?.enabled != false && this.blockBased.subscribe()
-        this.config.modules?.balanceChange?.enabled != false && this.balanceChangeBased.subscribe()
-        this.config.modules?.transferEvent?.enabled != false && this.eventBased.subscribe();
-    }
-
-    public triggerTestTransaction = async (): Promise<boolean> => {
-
-      const data: TransactionData = {
-        name: "TestName",
-        address: "TestAddress",
-        hash: "TestHash",
-        networkId: this.networkId,
-        txType: TransactionType.Sent,
-        amount: "0 Unit"
-      };
-
-      try {
-        await this.notifier.newTransaction(data)
-        return true
-      } catch (error) {
-        return false
-      } 
+        this.config.modules?.transferEventScanner?.enabled != false && this.eventScannerBased.subscribe();
     }
 
     public triggerTestTransfer = async (): Promise<boolean> => {
@@ -133,9 +107,7 @@ export class Subscriber {
         logger: this.logger
       }
 
-      this.blockBased = new BlockBased(subscriptionModuleConfig)
-      this.balanceChangeBased = new BalanceChangeBased(subscriptionModuleConfig)
-      this.eventBased = new EventBased(subscriptionModuleConfig,this.cache)
+      this.eventScannerBased = new EventScannerBased(subscriptionModuleConfig)
     }
 
 }

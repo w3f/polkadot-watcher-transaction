@@ -11,29 +11,29 @@ export interface InputConfig {
 export interface Subscribable {
   name: string;
   address: string;
-  transferEvent?: SubscriptionModuleConfig;
-  balanceChange?: SubscriptionModuleConfig;
-  transferExtrinsic?: SubscriptionModuleConfig;
+  transferEventScanner?: SubscriptionModuleConfig;
 }
 
 export interface SubscriptionModuleConfig {
   enabled?: boolean;
   sent?: boolean;
   received?: boolean;
+  dataDir?: string;
+  scanIntervalMillis?: number;
+  retriesBeforeLeave?: number;
+  delayBeforeRetryMillis?: number;
 }
 
 export interface SubscriberConfig {
   subscriptions: Array<Subscribable>;
   modules?: {
-    transferEvent?: SubscriptionModuleConfig;
-    balanceChange?: SubscriptionModuleConfig;
-    transferExtrinsic?: SubscriptionModuleConfig;
+    transferEventScanner?: SubscriptionModuleConfig;
   };
 }
 
 export interface MatrixbotConfig {
   endpoint: string;
-  strategy?: "NoDuplicates" | "Serial" | "Default";
+  strategy?: "TBD" | "Default";
   noDuplicatesWindow?: number;
 }
 

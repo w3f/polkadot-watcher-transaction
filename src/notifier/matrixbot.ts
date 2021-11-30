@@ -27,23 +27,10 @@ const MsgTemplate = {
     "version": "4"
 };
 
-
 export class Matrixbot implements Notifier {
     constructor(protected readonly endpoint: string, protected readonly logger: Logger) { }
 
-    newTransaction = async (data: TransactionData): Promise<string> =>{
-        const json = this._transactionMsg(data);
-
-        return await this._send(json);
-    }
-
-    newBalanceChange = async (data: TransactionData): Promise<string> =>{
-      const json = this._balanceChangeMsg(data);
-      
-      return await this._send(json);
-    }
-
-    newTransfer = async (data: TransactionData): Promise<string> =>{
+    newTransfer = async (data: TransactionData): Promise<boolean> =>{
       const json = this._transferMsg(data);
 
       return await this._send(json);
@@ -86,11 +73,13 @@ export class Matrixbot implements Notifier {
 
       let description: string;
       let alertname: string;
+      const checkUrl = data.hash ? `https://${data.networkId}.subscan.io/extrinsic/${data.hash} for details.` : `https://${data.networkId}.subscan.io/account/${data.address}?tab=transfer for details.`
+
       if (data.txType === TransactionType.Sent) {
-          description = `New Transfer of ${data.amount} sent from the account ${data.name}, check https://${data.networkId}.subscan.io/account/${data.address}?tab=transfer for details.`;
+          description = `New Transfer of ${data.amount} sent from the account ${data.name}, check ${checkUrl}`;
           alertname = 'TransferSent';
       } else {
-          description = `New Transfer of ${data.amount} received in the account ${data.name}, check https://${data.networkId}.subscan.io/account/${data.address}?tab=transfer for details.`;
+          description = `New Transfer of ${data.amount} received in the account ${data.name}, check ${checkUrl}`;
           alertname = 'TransferReceived';
       }
       msg.alerts[0].labels.alertname = alertname;
@@ -98,15 +87,15 @@ export class Matrixbot implements Notifier {
       return msg;
     }
 
-    protected _send = async (json: MatrixbotMsg): Promise<string> =>{
+    protected _send = async (json: MatrixbotMsg): Promise<boolean> =>{
       try {
         this.logger.info(`Sending New notification...`)
         this.logger.info(`${JSON.stringify(json)}`)
         const result = await got.post(this.endpoint, { json });
-        return result.body;
+        return result.statusCode == 200;
       } catch (error) {
         this.logger.error(`could not send the notification: ${error.message}`);
-        return error.message
+        return false
       }
     }
 
