@@ -90,24 +90,25 @@ export class EventScannerBased implements ISubscriptionModule{
       if(this.isScanOngoing){
         this.isNewScanRequired = true
         this.logger.info(`new scan queued...`)
-      }else{
+      }
+      else{
         try {
-          await this._scanForTransferEvents()
+          do {
+            this.isScanOngoing = true
+            this.isNewScanRequired = false
+            await this._scanForTransferEvents()
+          } while (this.isNewScanRequired);
         } catch (error) {
           this.logger.error(`last SCAN had an issue !: ${JSON.stringify(error)}`)
         } finally {
           this.isScanOngoing = false
         }
-
-        if(this.isNewScanRequired){
-          this._requestNewScan()
-        }
       } 
     }
 
+    // this function shouldn't be called directly, use _requestNewScan instead
+    // in this way, simultaneous executions are prevented
     private _scanForTransferEvents = async (): Promise<void> => {
-      this.isScanOngoing = true
-      this.isNewScanRequired = false
 
       const currentBlockNumber = (await this.api.rpc.chain.getHeader()).number.unwrap().toNumber()
       const lastCheckedBlock = await this._getLastCheckedBlock()
@@ -217,10 +218,6 @@ export class EventScannerBased implements ISubscriptionModule{
       this.logger.debug(`Delegating to the Notifier the New Transfer Event notification...`)
       this.logger.debug(JSON.stringify(data))
       return await this.notifier.newTransfer(data)
-
-      //TODO now it is just a mock
-      // await this.notifier.newTransfer(data)
-      // return true
     }
 
     private _getLastCheckedBlock = async (): Promise<number> => {
