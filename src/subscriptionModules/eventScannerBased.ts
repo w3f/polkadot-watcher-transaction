@@ -88,6 +88,10 @@ export class EventScannerBased implements ISubscriptionModule{
 
     private _requestNewScan = async (): Promise<void> => {
       if(this.isScanOngoing){
+        /*
+        A new scan can be trigger asynchronously for various reasons (see the subscribe function above). 
+        To ensure an exactly once detection and delivery, only one scan is allowed at time.  
+        */
         this.isNewScanRequired = true
         this.logger.info(`new scan queued...`)
       }
@@ -97,6 +101,9 @@ export class EventScannerBased implements ISubscriptionModule{
             this.isScanOngoing = true
             this.isNewScanRequired = false
             await this._scanForTransferEvents()
+            /*
+            An additional scan will be processed immediately if queued by any of the triggers.
+            */
           } while (this.isNewScanRequired);
         } catch (error) {
           this.logger.error(`last SCAN had an issue !: ${JSON.stringify(error)}`)
