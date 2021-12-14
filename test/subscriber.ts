@@ -37,11 +37,11 @@ const cfg = {
       },
       subscriptions: [{
             name: 'Alice',
-            address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
+            address: 'HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F'
         },
         {
             name: 'Bob',
-            address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'
+            address: 'FoQJpPyadYccjavVdTWxpxU7rUEaYhfLCPwXgkfD6Zat9QP'
         }]
     }
 };
@@ -52,14 +52,14 @@ const cfg2 = {
     ...cfg.subscriber,
     subscriptions: [{
           name: 'Alice',
-          address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+          address: 'HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F',
           transferEventScanner: {
             sent: false,
           }
       },
       {
           name: 'Bob',
-          address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+          address: 'FoQJpPyadYccjavVdTWxpxU7rUEaYhfLCPwXgkfD6Zat9QP',
           transferEventScanner: {
             received: false,
           }
@@ -67,7 +67,7 @@ const cfg2 = {
   }
 };
 
-const logger = createLogger();
+const logger = createLogger("debug");
 
 const testRPC = new TestPolkadotRPC();
 
