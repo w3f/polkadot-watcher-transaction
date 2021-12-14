@@ -11,7 +11,7 @@ import {
 } from './mocks';
 import { TransactionType } from '../src/types';
 import { initClient, sendFromAToB  } from './utils';
-import { delay, isDirExistent, rmDir } from '../src/utils';
+import { isDirExistent, rmDir } from '../src/utils';
 import { CodecHash } from '@polkadot/types/interfaces';
 
 should();
@@ -201,7 +201,7 @@ describe('Subscriber, with a started new chain...', () => {
       it('prometheus scan height should stuck because of the broken notifier', async () => {
           await sendFromAliceToBob();//this will trigger a scan
           const height = prometheus.scanHeight
-          await sendFromAliceToBob();//this will eventually trigger or queue a scan
+          await sendFromAliceToBob();//this will eventually trigger or queue a scan. We should be stucked though.
           prometheus.scanHeight.should.equal(height)
       });
     });
