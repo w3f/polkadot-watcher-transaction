@@ -9,6 +9,7 @@ import { TestPolkadotRPC } from '@w3f/test-utils';
 import { delay, isBalanceTransferEvent } from '../src/utils';
 import { Event } from '@polkadot/types/interfaces';
 import { Notifier } from '../src/notifier/INotifier';
+import { PromClient } from "../src/types";
 
 export class NotifierMock implements Notifier{
     private _receivedTransferEvents: Array<TransactionData> = [];
@@ -85,4 +86,17 @@ export class ExtrinsicMock {
 
 }
 
+
+export class PrometheusMock implements PromClient {
+  private _scanHeight = 0;
+
+  updateScanHeight = (blockNumber: number): void => {
+    this._scanHeight = blockNumber
+  }
+  
+  public get scanHeight(): number {
+    return this._scanHeight
+  }
+  
+}
 

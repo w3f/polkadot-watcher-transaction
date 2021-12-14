@@ -84,3 +84,7 @@ export interface MatrixbotMsg {
   alerts: Array<Alert>;
   version: string;
 }
+
+export interface PromClient {
+  updateScanHeight(blockNumber: number): void;
+}

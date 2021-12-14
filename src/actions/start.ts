@@ -41,7 +41,7 @@ export const startAction = async (cmd): Promise<void> =>{
 
     const notifier = new NotifierFactory(cfg.matrixbot,logger).makeNotifier()
 
-    const subscriber = new Subscriber(cfg,notifier,logger);
+    const subscriber = new Subscriber(cfg,notifier,promClient,logger);
     await subscriber.start();
 
     _addTestEndpoint(server,subscriber)

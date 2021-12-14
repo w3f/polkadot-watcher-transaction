@@ -7,10 +7,11 @@ import {
   ExtrinsicMock,
     NotifierMock,
     NotifierMockBroken,
+    PrometheusMock,
 } from './mocks';
 import { TransactionType } from '../src/types';
 import { initClient, sendFromAToB  } from './utils';
-import { isDirExistent, rmDir } from '../src/utils';
+import { delay, isDirExistent, rmDir } from '../src/utils';
 import { CodecHash } from '@polkadot/types/interfaces';
 
 should();
@@ -20,7 +21,7 @@ let keyring: Keyring;
 const dataDir = "./test/data"
 
 const cfg = {
-    logLevel: 'debug',
+    logLevel: 'info',
     port: 3000,
     endpoint: 'some_endpoint',
     matrixbot: {
@@ -67,7 +68,7 @@ const cfg2 = {
   }
 };
 
-const logger = createLogger("debug");
+const logger = createLogger();
 
 const testRPC = new TestPolkadotRPC();
 
@@ -133,22 +134,26 @@ describe('Subscriber, with a started new chain...', () => {
   describe('with a started instance, cfg1', () => {
       let nt: NotifierMock
       let subject: Subscriber
+      let prometheus: PrometheusMock
       
       before(async () => {
           nt = new NotifierMock();
           cfg.endpoint = testRPC.endpoint();
-          subject = new Subscriber(cfg, nt, logger);
+          prometheus = new PrometheusMock();
+          subject = new Subscriber(cfg, nt, prometheus, logger);
           await subject.start();
       });
 
       describe('transactions', async () => {
           it('should notify transfer events', async () => {
               nt.resetReceivedData();
+              const initialScanHeight = prometheus.scanHeight
 
               await sendFromAliceToBob();
 
               checkNotifiedTransactionEvent('Alice', TransactionType.Sent, nt)
               checkNotifiedTransactionEvent('Bob', TransactionType.Received, nt)
+              prometheus.scanHeight.should.greaterThan(initialScanHeight)
           });
       });
 
@@ -172,8 +177,6 @@ describe('Subscriber, with a started new chain...', () => {
         it('is transferBalances event 2', async () => {
           const event = await extrinsicMock.generateTransferEvent('//Bob','//Alice')
 
-          
-
           const result = await subject["eventScannerBased"]["_balanceTransferHandler"](event,await createCodecHash())
 
           result.should.be.true
@@ -184,12 +187,23 @@ describe('Subscriber, with a started new chain...', () => {
   describe('with a started instance, cfg1, notifier Broken...', () => {
     let nt: NotifierMockBroken
     let subject: Subscriber
+    let prometheus: PrometheusMock
     
     before(async () => {
         nt = new NotifierMockBroken();
         cfg.endpoint = testRPC.endpoint();
-        subject = new Subscriber(cfg, nt, logger);
+        prometheus = new PrometheusMock();
+        subject = new Subscriber(cfg, nt, prometheus, logger);
         await subject.start();
+    });
+
+    describe('transactions', async () => {
+      it('prometheus scan height should stuck because of the broken notifier', async () => {
+          await sendFromAliceToBob();//this will trigger a scan
+          const height = prometheus.scanHeight
+          await sendFromAliceToBob();//this will eventually trigger or queue a scan
+          prometheus.scanHeight.should.equal(height)
+      });
     });
 
     describe('transferBalancesEventHandler', async () => {
@@ -205,18 +219,21 @@ describe('Subscriber, with a started new chain...', () => {
 
   describe('with an started instance, cfg2', () => {
     let nt: NotifierMock
+    let prometheus: PrometheusMock
     
     before(async () => {
         nt = new NotifierMock();
         const cfg = cfg2
         cfg.endpoint = testRPC.endpoint();
-        const subject = new Subscriber(cfg, nt, logger);
+        prometheus = new PrometheusMock();
+        const subject = new Subscriber(cfg, nt, prometheus, logger);
         await subject.start();
     });
 
     describe('transactions', async () => {
-        it('should NOT notify...', async () => {
+        it('should NOT notify, according to the configuration...', async () => {
             nt.resetReceivedData();
+            const initialScanHeight = prometheus.scanHeight
 
             await sendFromAliceToBob();
             checkNotifiedTransactionEvent('Alice', TransactionType.Sent, nt, false)
@@ -225,6 +242,7 @@ describe('Subscriber, with a started new chain...', () => {
             await sendFromBobToAlice();
             checkNotifiedTransactionEvent('Bob', TransactionType.Sent, nt, true)
             checkNotifiedTransactionEvent('Alice', TransactionType.Received, nt, true)
+            prometheus.scanHeight.should.greaterThan(initialScanHeight)
         });
 
     });

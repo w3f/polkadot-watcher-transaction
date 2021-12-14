@@ -1,0 +1,28 @@
+{{ if .Values.prometheusRules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+{{ toYaml .Values.prometheusRules.labels | indent 4 }}
+  name: {{ .Release.Name }}
+spec:
+  groups:
+  - name: {{ .Release.Name }}.rules
+    rules:
+    - alert: ScanStallShort
+      annotations:
+        message: 'Scanner got stuck for more than 10 minutes in {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}}, please check the origin {{`{{ $labels.origin }}`}}'
+      expr: increase(polkadot_watcher_tx_scan_height[10m]) == 0
+      for: 10m
+      labels:
+        severity: warning
+        origin: {{ .Values.origin }}
+    - alert: ScanStallLong
+      annotations:
+        message: 'Scanner got stuck for more than 20 minutes in {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}}, please check the origin {{`{{ $labels.origin }}`}}'
+      expr: increase(polkadot_watcher_tx_scan_height[10m]) == 0
+      for: 20m
+      labels:
+        severity: critical
+        origin: {{ .Values.origin }}     
+{{ end }}

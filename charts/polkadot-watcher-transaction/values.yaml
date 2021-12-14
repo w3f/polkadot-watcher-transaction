@@ -17,12 +17,18 @@ config:
         sent: true
         received: true
         dataDir: "/app/data"
-        scanIntervalMillis: 600000
+        scanIntervalMillis: 300000
         retriesBeforeLeave: 5
         delayBeforeRetryMillis: 5000
     subscriptions: 
     - name: faucet
       address: EaG2CRhJWPb7qmdcJvy3LiWdh26Jreu9Dx6R1rXxPmYXoDk 
+
+prometheusRules:
+  labels:
+    app: w3f
+  origin: clusterName
+  enabled: true      
 
 resources:
   requests:

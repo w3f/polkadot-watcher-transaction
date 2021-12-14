@@ -2,7 +2,7 @@ import { ApiPromise} from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import readline from 'readline';
 import {
-    TransactionData, TransactionType, SubscriberConfig, Subscribable
+    TransactionData, TransactionType, SubscriberConfig, Subscribable, PromClient
 } from '../types';
 import { Event, CodecHash } from '@polkadot/types/interfaces';
 import { closeFile, delay, extractTransferInfoFromEvent, getFileNames, getSubscriptionNotificationConfig, initReadFileStream, initWriteFileStream, isBalanceTransferEvent, isDirEmpty, isDirExistent, makeDir, setIntervalFunction } from '../utils';
@@ -28,7 +28,7 @@ export class EventScannerBased implements ISubscriptionModule{
     private isScanOngoing = false //lock for concurrency
     private isNewScanRequired = false
     
-    constructor(params: SubscriptionModuleConstructorParams) {
+    constructor(params: SubscriptionModuleConstructorParams, private readonly promClient: PromClient) {
       this.api = params.api
       this.networkId = params.networkId
       this.notifier = params.notifier
@@ -162,7 +162,9 @@ export class EventScannerBased implements ISubscriptionModule{
         }
       }
       
-      this.logger.info(`\n*****\nSCAN completed at block ${await this._getLastCheckedBlock()}\n*****`)
+      const scanEndingBlock = await this._getLastCheckedBlock()
+      this.logger.info(`\n*****\nSCAN completed at block ${scanEndingBlock}\n*****`)
+      this.promClient.updateScanHeight(scanEndingBlock)
     }
 
     private _balanceTransferHandler = async (event: Event, extrinsicHash: CodecHash): Promise<boolean> => {
