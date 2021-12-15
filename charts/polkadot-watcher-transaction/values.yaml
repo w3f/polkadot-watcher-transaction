@@ -25,6 +25,12 @@ config:
     - name: faucet
       address: EaG2CRhJWPb7qmdcJvy3LiWdh26Jreu9Dx6R1rXxPmYXoDk 
 
+serviceMonitor:
+  enabled: true
+  labels:
+    group: w3f
+    release: prometheus-operator
+
 prometheusRules:
   enabled: true
   labels:
