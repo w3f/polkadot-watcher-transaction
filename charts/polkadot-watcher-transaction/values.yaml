@@ -26,13 +26,13 @@ config:
       address: EaG2CRhJWPb7qmdcJvy3LiWdh26Jreu9Dx6R1rXxPmYXoDk 
 
 serviceMonitor:
-  enabled: true
+  enabled: false
   labels:
     group: w3f
     release: prometheus-operator
 
 prometheusRules:
-  enabled: true
+  enabled: false
   labels:
     app: w3f
     role: alert-rules #according to https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/alerting.md#prometheusrule-labelling
