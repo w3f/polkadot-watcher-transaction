@@ -11,18 +11,20 @@ spec:
     rules:
     - alert: ScanStallShort
       annotations:
-        message: 'Scanner got stuck for more than 10 minutes in {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}}, please check the origin {{`{{ $labels.origin }}`}}'
+        message: 'Scanner got stuck for more than 10 minutes at block https://{{`{{ $labels.network }}`}}.subscan.io/block/{{`{{ $value }}`}} | Please check the origin {{`{{ $labels.origin }}`}} at {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}}'
       expr: increase(polkadot_watcher_tx_scan_height[10m]) == 0
       for: 10m
       labels:
         severity: warning
-        origin: {{ .Values.origin }}
+        origin: {{ .Values.prometheusRules.origin }}
+        network: {{ .Values.prometheusRules.network }}
     - alert: ScanStallLong
       annotations:
-        message: 'Scanner got stuck for more than 20 minutes in {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}}, please check the origin {{`{{ $labels.origin }}`}}'
+        message: 'Scanner got stuck for more than 20 minutes at block https://{{`{{ $labels.network }}`}}.subscan.io/block/{{`{{ $value }}`}} | Please check the origin {{`{{ $labels.origin }}`}} at {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}}'
       expr: increase(polkadot_watcher_tx_scan_height[10m]) == 0
       for: 20m
       labels:
         severity: critical
-        origin: {{ .Values.origin }}     
+        origin: {{ .Values.prometheusRules.origin }}
+        network: {{ .Values.prometheusRules.network }}     
 {{ end }}
