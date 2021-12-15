@@ -199,7 +199,7 @@ describe('Subscriber, with a started new chain...', () => {
 
     describe('transactions', async () => {
       it('prometheus scan height should stuck because of the broken notifier', async () => {
-          await sendFromAliceToBob();//this will trigger a scan
+          await sendFromAliceToBob();//this will trigger a scan. We want to show that we're going to get stuck right there.
           const height = prometheus.scanHeight
           await sendFromAliceToBob();//this will eventually trigger or queue a scan. We should be stucked though.
           prometheus.scanHeight.should.equal(height)
