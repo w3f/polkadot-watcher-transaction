@@ -35,6 +35,7 @@ prometheusRules:
   enabled: true
   labels:
     app: w3f
+    role: alert-rules #according to https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/alerting.md#prometheusrule-labelling
   origin: clusterName
   network: polkadot # polkadot | kusama
 
