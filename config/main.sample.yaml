@@ -8,6 +8,7 @@ subscriber:
   modules:
     transferEventScanner:
       enabled: true
+      #startFromBlock: 10527640 
       sent: true
       received: true
       dataDir: "./data"

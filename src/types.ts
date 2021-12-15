@@ -16,6 +16,7 @@ export interface Subscribable {
 
 export interface SubscriptionModuleConfig {
   enabled?: boolean;
+  startFromBlock?: number;
   sent?: boolean;
   received?: boolean;
   dataDir?: string;
