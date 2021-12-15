@@ -16,6 +16,7 @@ export interface Subscribable {
 
 export interface SubscriptionModuleConfig {
   enabled?: boolean;
+  startFromBlock?: number;
   sent?: boolean;
   received?: boolean;
   dataDir?: string;
@@ -83,4 +84,8 @@ export interface MatrixbotMsg {
   status: string;
   alerts: Array<Alert>;
   version: string;
+}
+
+export interface PromClient {
+  updateScanHeight(blockNumber: number): void;
 }

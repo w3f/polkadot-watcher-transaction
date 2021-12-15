@@ -14,15 +14,30 @@ config:
     modules:
       transferEventScanner:
         enabled: true
+        #startFromBlock: 10527640 
         sent: true
         received: true
         dataDir: "/app/data"
-        scanIntervalMillis: 600000
+        scanIntervalMillis: 300000 #5 minutes
         retriesBeforeLeave: 5
         delayBeforeRetryMillis: 5000
     subscriptions: 
     - name: faucet
       address: EaG2CRhJWPb7qmdcJvy3LiWdh26Jreu9Dx6R1rXxPmYXoDk 
+
+serviceMonitor:
+  enabled: false
+  labels:
+    group: w3f
+    release: prometheus-operator
+
+prometheusRules:
+  enabled: false
+  labels:
+    app: w3f
+    role: alert-rules #according to https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/alerting.md#prometheusrule-labelling
+  origin: clusterName
+  network: polkadot # polkadot | kusama
 
 resources:
   requests:

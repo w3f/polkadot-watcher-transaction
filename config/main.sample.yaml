@@ -8,10 +8,11 @@ subscriber:
   modules:
     transferEventScanner:
       enabled: true
+      #startFromBlock: 10527640 
       sent: true
       received: true
       dataDir: "./data"
-      scanIntervalMillis: 600000
+      scanIntervalMillis: 300000
       retriesBeforeLeave: 5
       delayBeforeRetryMillis: 5000
   subscriptions:

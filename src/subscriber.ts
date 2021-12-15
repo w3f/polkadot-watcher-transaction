@@ -2,7 +2,7 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import { Text } from '@polkadot/types/primitive';
 import {
-    InputConfig, SubscriberConfig, TransactionData, TransactionType
+    InputConfig, PromClient, SubscriberConfig, TransactionData, TransactionType
 } from './types';
 import { EventScannerBased } from './subscriptionModules/eventScannerBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
@@ -22,6 +22,7 @@ export class Subscriber {
     constructor(
         cfg: InputConfig,
         private readonly notifier: Notifier,
+        private readonly promClient: PromClient,
         private readonly logger: Logger) {
         this.endpoint = cfg.endpoint;
         this.logLevel = cfg.logLevel;
@@ -107,7 +108,7 @@ export class Subscriber {
         logger: this.logger
       }
 
-      this.eventScannerBased = new EventScannerBased(subscriptionModuleConfig)
+      this.eventScannerBased = new EventScannerBased(subscriptionModuleConfig,this.promClient)
     }
 
 }

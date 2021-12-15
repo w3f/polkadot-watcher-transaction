@@ -2,7 +2,7 @@ import { ApiPromise} from '@polkadot/api';
 import { Logger } from '@w3f/logger';
 import readline from 'readline';
 import {
-    TransactionData, TransactionType, SubscriberConfig, Subscribable
+    TransactionData, TransactionType, SubscriberConfig, Subscribable, PromClient
 } from '../types';
 import { Event, CodecHash } from '@polkadot/types/interfaces';
 import { closeFile, delay, extractTransferInfoFromEvent, getFileNames, getSubscriptionNotificationConfig, initReadFileStream, initWriteFileStream, isBalanceTransferEvent, isDirEmpty, isDirExistent, makeDir, setIntervalFunction } from '../utils';
@@ -28,7 +28,7 @@ export class EventScannerBased implements ISubscriptionModule{
     private isScanOngoing = false //lock for concurrency
     private isNewScanRequired = false
     
-    constructor(params: SubscriptionModuleConstructorParams) {
+    constructor(params: SubscriptionModuleConstructorParams, private readonly promClient: PromClient) {
       this.api = params.api
       this.networkId = params.networkId
       this.notifier = params.notifier
@@ -66,8 +66,9 @@ export class EventScannerBased implements ISubscriptionModule{
       }
 
       if( isDirEmpty(this.dataDir) || !getFileNames(this.dataDir,this.logger).includes(this.dataFileName) || ! await this._getLastCheckedBlock()){
+        const firstBlockToScan = this.config.modules?.transferEventScanner?.startFromBlock ? this.config.modules?.transferEventScanner?.startFromBlock : (await this.api.rpc.chain.getHeader()).number.unwrap().toNumber() // from config or current block
         const file = initWriteFileStream(this.dataDir,this.dataFileName,this.logger)
-        file.write(`${(await this.api.rpc.chain.getHeader()).number.unwrap().toNumber()}`) //init with current block header
+        file.write(`${firstBlockToScan}`)
         await closeFile(file)
       }
     }
@@ -249,6 +250,7 @@ export class EventScannerBased implements ISubscriptionModule{
       const file = initWriteFileStream(this.dataDir,this.dataFileName,this.logger)
       const result = file.write(blockNumber.toString())
       await closeFile(file)
+      if(result) this.promClient.updateScanHeight(blockNumber)
       return result
     }
 
