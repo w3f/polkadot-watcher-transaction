@@ -90,7 +90,7 @@ export class ExtrinsicMock {
 export class PrometheusMock implements PromClient {
   private _scanHeight = 0;
 
-  updateScanHeight = (blockNumber: number): void => {
+  updateScanHeight = (_network: string, blockNumber: number): void => {
     this._scanHeight = blockNumber
   }
   

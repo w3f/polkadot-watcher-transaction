@@ -26,20 +26,16 @@ export class Prometheus implements PromClient {
         })
     }
 
-    updateScanHeight(blockNumer: number): void {
-      this.scanHeight.set({},blockNumer)
-    }
-
-    initScanHeight(): void {
-      this.scanHeight.set({},0)
+    updateScanHeight(network: string, blockNumer: number): void {
+      this.scanHeight.set({ network },blockNumer)
     }
 
     _initMetrics(): void {
       this.scanHeight = new promClient.Gauge({
         name: 'polkadot_watcher_tx_scan_height',
         help: 'Block heigh reached by the scanner',
+        labelNames: ['network']
       });
-      this.initScanHeight()
     }
 
 

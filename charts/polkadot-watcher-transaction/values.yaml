@@ -2,7 +2,7 @@ environment: production
 
 image:
   repo: web3f/polkadot-watcher-transaction
-  tag: v0.5.2
+  tag: v0.5.3
 
 config:
   endpoint: "wss://kusama-rpc.polkadot.io/"
@@ -37,7 +37,6 @@ prometheusRules:
     app: w3f
     role: alert-rules #according to https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/alerting.md#prometheusrule-labelling
   origin: clusterName
-  network: polkadot # polkadot | kusama
 
 resources:
   requests:

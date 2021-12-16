@@ -51,6 +51,7 @@ export class EventScannerBased implements ISubscriptionModule{
     public subscribe = async (): Promise<void> => {
 
       await this._initDataDir()
+      this.promClient.updateScanHeight(this.networkId,await this._getLastCheckedBlock())//init prometheus metric
 
       await this._handleEventsSubscriptions() // scan immediately after a event detection
       this.logger.info(`Event Scanner Based Module subscribed...`)
@@ -250,7 +251,7 @@ export class EventScannerBased implements ISubscriptionModule{
       const file = initWriteFileStream(this.dataDir,this.dataFileName,this.logger)
       const result = file.write(blockNumber.toString())
       await closeFile(file)
-      if(result) this.promClient.updateScanHeight(blockNumber)
+      if(result) this.promClient.updateScanHeight(this.networkId,blockNumber)
       return result
     }
 
