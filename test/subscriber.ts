@@ -114,7 +114,9 @@ const createCodecHash = async (client?: Client): Promise<CodecHash> =>{
     client = initClient(testRPC.endpoint())
   }
 
-  return (await client.api()).registry.createType('CodecHash')
+  const type: CodecHash = (await client.api()).registry.createType('CodecHash')
+
+  return type
 }
 
 describe('Subscriber, with a started new chain...', () => {
