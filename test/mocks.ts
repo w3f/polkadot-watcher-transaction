@@ -61,7 +61,7 @@ export class ExtrinsicMock {
 
     const api = await this.client.api()
 
-    const unsubscribe = await api.query.system.events((events) => {
+    const unsubscribe: any = await api.query.system.events((events) => {
 
       events.forEach(async (record) => {
         const { event } = record;
