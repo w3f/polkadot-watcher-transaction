@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
+import '@polkadot/api-augment'; //https://github.com/polkadot-js/api/issues/4450
 import { Logger } from '@w3f/logger';
 import { Client, Keyring } from '@w3f/polkadot-api-client';
 import { TransactionData } from '../src/types';
@@ -61,7 +62,7 @@ export class ExtrinsicMock {
 
     const api = await this.client.api()
 
-    const unsubscribe: any = await api.query.system.events((events) => {
+    const unsubscribe = await api.query.system.events((events) => {
 
       events.forEach(async (record) => {
         const { event } = record;

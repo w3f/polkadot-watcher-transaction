@@ -130,12 +130,13 @@ export class EventScannerBased implements ISubscriptionModule{
 
         const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber)
         const block = await this.api.rpc.chain.getBlock(blockHash)
-        const allRecords: any = await this.api.query.system.events.at(blockHash);
+        const allRecords = await this.api.query.system.events.at(blockHash);
         
         
 
         for (const [index, { hash }] of block.block.extrinsics.entries()) {
-          for (const {event} of allRecords.filter(({ phase,event }) => 
+          for (const {event} of allRecords
+            .filter(({ phase,event }) => 
               phase.isApplyExtrinsic &&
               phase.asApplyExtrinsic.eq(index) && 
               isBalanceTransferEvent(event,this.api)
