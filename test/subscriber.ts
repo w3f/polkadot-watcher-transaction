@@ -1,3 +1,4 @@
+import '@polkadot/api-augment'; //https://github.com/polkadot-js/api/issues/4450
 import { Client, Keyring } from '@w3f/polkadot-api-client';
 import { TestPolkadotRPC } from '@w3f/test-utils';
 import { createLogger } from '@w3f/logger';
@@ -114,9 +115,7 @@ const createCodecHash = async (client?: Client): Promise<CodecHash> =>{
     client = initClient(testRPC.endpoint())
   }
 
-  const type: CodecHash = (await client.api()).registry.createType('CodecHash')
-
-  return type
+  return (await client.api()).createType('CodecHash')
 }
 
 describe('Subscriber, with a started new chain...', () => {
