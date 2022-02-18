@@ -109,6 +109,8 @@ export class EventScannerBased implements ISubscriptionModule{
           } while (this.isNewScanRequired);
         } catch (error) {
           this.logger.error(`last SCAN had an issue !: ${JSON.stringify(error)}`)
+          // better to exit and restart
+          process.exit(-1)
         } finally {
           this.isScanOngoing = false
         }

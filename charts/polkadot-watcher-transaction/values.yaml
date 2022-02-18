@@ -2,7 +2,7 @@ environment: production
 
 image:
   repo: web3f/polkadot-watcher-transaction
-  tag: v0.5.6
+  #tag: latest
 
 config:
   endpoint: "wss://kusama-rpc.polkadot.io/"
@@ -30,6 +30,14 @@ serviceMonitor:
   labels:
     group: w3f
     release: prometheus-operator
+
+restarter:
+  enabled: false
+  schedule: "0 6 * * *"
+  image:
+    repo: web3f/pod-restarter
+    tag: v0.1.1
+
 
 prometheusRules:
   enabled: false
