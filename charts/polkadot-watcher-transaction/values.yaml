@@ -49,7 +49,7 @@ prometheusRules:
 resources:
   requests:
     cpu: "200m"
-    memory: "100Mi"
+    memory: "200Mi"
   limits:
     cpu: "600m"
-    memory: "500Mi"
+    memory: "600Mi"
