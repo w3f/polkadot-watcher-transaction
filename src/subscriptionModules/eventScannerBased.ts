@@ -176,6 +176,9 @@ export class EventScannerBased implements ISubscriptionModule{
       let isNewNotificationDelivered = false
       let isNewNotificationNecessary = false
 
+      let notificationConfigFrom: {sent: boolean; received: boolean}
+      let notificationConfigTo: {sent: boolean; received: boolean} 
+
       if(this.subscriptions.has(from)){
         isNewNotificationNecessary = true
         const data: TransactionData = {
@@ -187,15 +190,10 @@ export class EventScannerBased implements ISubscriptionModule{
           amount: formatBalance(amount,{},this.api.registry.chainDecimals[0])
         };
 
-        const notificationConfig = getSubscriptionNotificationConfig(this.config.modules?.transferEventScanner,this.subscriptions.get(from).transferEventScanner)
-
-        if(notificationConfig.sent){
+        notificationConfigFrom = getSubscriptionNotificationConfig(this.config.modules?.transferEventScanner,this.subscriptions.get(from).transferEventScanner)
+        if(notificationConfigFrom.sent){
           this.logger.info(`Balances Transfer Event from ${from} detected`)
           isNewNotificationDelivered = await this._notifyNewTransfer(data)
-        }
-        else{
-          isNewNotificationNecessary = false
-          this.logger.debug(`Balances Transfer Event from ${from} detected. Notification SUPPRESSED`)
         }
       }
 
@@ -209,17 +207,17 @@ export class EventScannerBased implements ISubscriptionModule{
           hash: extrinsicHash.toString(),
           amount: formatBalance(amount,{},this.api.registry.chainDecimals[0])
         };
-
-        const notificationConfig = getSubscriptionNotificationConfig(this.config.modules?.transferEventScanner,this.subscriptions.get(to).transferEventScanner)
         
-        if(notificationConfig.received){
+        notificationConfigTo = getSubscriptionNotificationConfig(this.config.modules?.transferEventScanner,this.subscriptions.get(to).transferEventScanner)
+        if(notificationConfigTo.received){
           this.logger.info(`Balances Transfer Event to ${to} detected`)
           isNewNotificationDelivered = await this._notifyNewTransfer(data)
         }
-        else{
-          isNewNotificationNecessary = false
-          this.logger.debug(`Balances Transfer Event to ${to} detected. Notification SUPPRESSED`)
-        }
+      }
+
+      if(isNewNotificationNecessary && !notificationConfigFrom?.sent && !notificationConfigTo?.received){
+        isNewNotificationNecessary = false
+        this.logger.debug(`Balances Transfer Event from ${from} to ${to} detected. Notification SUPPRESSED`)
       }
       
       return isNewNotificationDelivered || !isNewNotificationNecessary
