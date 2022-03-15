@@ -221,7 +221,7 @@ describe('Subscriber, with a started new chain...', () => {
     let nt: NotifierMockBroken
     let subject: Subscriber
     let prometheus: PrometheusMock
-    let stub: any
+    let stub: sinon.SinonStub
     
     before(async () => {
         nt = new NotifierMockBroken();
