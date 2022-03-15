@@ -14,6 +14,7 @@ import { TransactionType } from '../src/types';
 import { initClient, sendFromAToB  } from './utils';
 import { isDirExistent, rmDir } from '../src/utils';
 import { CodecHash } from '@polkadot/types/interfaces';
+import sinon from 'sinon'
 
 should();
 
@@ -185,39 +186,6 @@ describe('Subscriber, with a started new chain...', () => {
       });
   });
 
-  describe('with a started instance, cfg1, notifier Broken...', () => {
-    let nt: NotifierMockBroken
-    let subject: Subscriber
-    let prometheus: PrometheusMock
-    
-    before(async () => {
-        nt = new NotifierMockBroken();
-        cfg.endpoint = testRPC.endpoint();
-        prometheus = new PrometheusMock();
-        subject = new Subscriber(cfg, nt, prometheus, logger);
-        await subject.start();
-    });
-
-    describe('transactions', async () => {
-      it('prometheus scan height should stuck because of the broken notifier', async () => {
-          await sendFromAliceToBob();//this will trigger a scan. We want to show that we're going to get stuck right there.
-          const height = prometheus.scanHeight
-          await sendFromAliceToBob();//this will eventually trigger or queue a scan. We should be stucked though.
-          prometheus.scanHeight.should.equal(height)
-      });
-    });
-
-    describe('transferBalancesEventHandler', async () => {
-      it('is transferBalances event, but the notifier is broken', async () => {
-          const event = await extrinsicMock.generateTransferEvent('//Alice','//Bob')
-
-          const result = await subject["eventScannerBased"]["_balanceTransferHandler"](event,await createCodecHash())
-
-          result.should.be.false
-      });
-    });
-  });
-
   describe('with an started instance, cfg2', () => {
     let nt: NotifierMock
     let prometheus: PrometheusMock
@@ -246,6 +214,46 @@ describe('Subscriber, with a started new chain...', () => {
             prometheus.scanHeight.should.greaterThan(initialScanHeight)
         });
 
+    });
+  });
+
+  describe('with a started instance, cfg1, notifier Broken...', () => {
+    let nt: NotifierMockBroken
+    let subject: Subscriber
+    let prometheus: PrometheusMock
+    let stub: any
+    
+    before(async () => {
+        nt = new NotifierMockBroken();
+        cfg.endpoint = testRPC.endpoint();
+        prometheus = new PrometheusMock();
+        subject = new Subscriber(cfg, nt, prometheus, logger);
+        stub = sinon.stub(process, 'exit');
+        await subject.start();
+    });
+
+    after(async () => {
+      stub.restore()
+    });
+
+    describe('transactions', async () => {
+      it('prometheus scan should stuck because of the broken notifier', async () => {
+          await sendFromAliceToBob();//this will trigger a scan. We want to show that we're going to get stuck right there.
+          const height = prometheus.scanHeight
+          await sendFromAliceToBob();//this will eventually trigger or queue a scan. We should be stucked though.
+          prometheus.scanHeight.should.equal(height)
+          sinon.assert.called(stub)
+      });
+    });
+
+    describe('transferBalancesEventHandler', async () => {
+      it('is transferBalances event, but the notifier is broken', async () => {
+          const event = await extrinsicMock.generateTransferEvent('//Alice','//Bob')
+
+          const result = await subject["eventScannerBased"]["_balanceTransferHandler"](event,await createCodecHash())
+
+          result.should.be.false
+      });
     });
   });
 
