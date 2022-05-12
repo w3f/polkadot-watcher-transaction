@@ -17,3 +17,15 @@ yarn
 yarn build
 yarn start
 ```
+
+## About
+
+The application consits of a scanner that can be configured to start from a configured block number, and then it keeps monitoring the on-chain situation delivering alerts to a notifier. For instance, you can deliver the alerts to a matrixbot instance, which will forward the message to a Matrix/Synapse channel.
+
+### Monitoring Features
+
+- detection of [BalanceTransfer](https://polkadot.js.org/docs/substrate/events#transferaccountid32-accountid32-u128) events
+
+## Configuration
+
+A sample config file is provided [here](/config/main.sample.yaml)
