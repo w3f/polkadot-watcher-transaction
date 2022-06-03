@@ -1,6 +1,6 @@
 {
   "name": "polkadot-watcher-transaction",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "description": "Monitor events on Polkadot networks, specifically transactions",
   "repository": "git@github.com:w3f/polkadot-watcher-csv-exporter.git",
   "author": "W3F Infrastructure Team <devops@web3.foundation>",
@@ -49,7 +49,7 @@
     "nock": "^12.0.3",
     "sinon": "^13.0.1",
     "tmp": "^0.2.1",
-    "ts-node": "^9.1.1",
-    "typescript": "^4.6.4"
+    "ts-node": "^10.8.0",
+    "typescript": "^4.7.2"
   }
 }
