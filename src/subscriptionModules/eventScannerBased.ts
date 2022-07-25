@@ -189,7 +189,7 @@ export class EventScannerBased implements ISubscriptionModule{
           networkId: this.networkId,
           txType: TransactionType.Sent,
           hash: extrinsicHash.toString(),
-          amount: formatBalance(amount,{},this.api.registry.chainDecimals[0])
+          amount: formatBalance(amount,{decimals:this.api.registry.chainDecimals[0]})
         };
 
         notificationConfigFrom = getSubscriptionNotificationConfig(this.config.modules?.transferEventScanner,this.subscriptions.get(from).transferEventScanner)
@@ -207,7 +207,7 @@ export class EventScannerBased implements ISubscriptionModule{
           networkId: this.networkId,
           txType: TransactionType.Received,
           hash: extrinsicHash.toString(),
-          amount: formatBalance(amount,{},this.api.registry.chainDecimals[0])
+          amount: formatBalance(amount,{decimals:this.api.registry.chainDecimals[0]})
         };
         
         notificationConfigTo = getSubscriptionNotificationConfig(this.config.modules?.transferEventScanner,this.subscriptions.get(to).transferEventScanner)
