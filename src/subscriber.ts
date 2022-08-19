@@ -1,5 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Logger } from '@w3f/logger';
+import { Logger, LoggerSingleton } from './logger';
 import { Text } from '@polkadot/types/primitive';
 import {
     InputConfig, PromClient, SubscriberConfig, TransactionData, TransactionType
@@ -16,14 +16,14 @@ export class Subscriber {
     private endpoint: string;
     private logLevel: string;
     private config: SubscriberConfig;
+    private readonly logger: Logger = LoggerSingleton.getInstance()
 
     private eventScannerBased: EventScannerBased;
     
     constructor(
         cfg: InputConfig,
         private readonly notifier: Notifier,
-        private readonly promClient: PromClient,
-        private readonly logger: Logger) {
+        private readonly promClient: PromClient) {
         this.endpoint = cfg.endpoint;
         this.logLevel = cfg.logLevel;
 
@@ -105,7 +105,6 @@ export class Subscriber {
         networkId: this.networkId,
         notifier: this.notifier,
         config: this.config,
-        logger: this.logger
       }
 
       this.eventScannerBased = new EventScannerBased(subscriptionModuleConfig,this.promClient)

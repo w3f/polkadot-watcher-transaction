@@ -4,14 +4,14 @@ import { should } from 'chai';
 
 import { Matrixbot } from '../src/notifier/matrixbot';
 import { TransactionType } from '../src/types';
-import { createLogger } from '@w3f/logger';
+import { LoggerSingleton } from '../src/logger'
 
 should();
 
 const host = 'http://localhost:9090';
 const path = 'matrixbot';
 const endpoint = `${host}/${path}`;
-const subject = new Matrixbot(endpoint,createLogger());
+const subject = new Matrixbot(endpoint);
 const senderName = 'senderName';
 const senderAddress = 'senderAddress';
 const receiverName = 'receiverName';
@@ -24,6 +24,8 @@ const expectedSentMessage = `New Transfer of ${amount} sent from the account ${s
 const expectedSentAlertname = 'TransactionSent';
 const expectedReceivedMessage = `New Transfer of ${amount} received in the account ${receiverName}, check https://${networkId}.subscan.io/extrinsic/${txHash} for details`;
 const expectedReceivedAlertname = 'TransactionReceived';
+
+LoggerSingleton.setInstance("info")
 
 const mockRestNotifier = (alertname: string, message: string): void => {
   nock(host).post(`/${path}`,_.matches(

@@ -1,4 +1,9 @@
-{{ if and .Values.prometheusRules.enabled ( ne .Values.environment "ci" ) }}
+# max by(job,namespace,network,address,name) is the primary key which all the metrics are aggregated by to avoid alerts flapping: i.e. when a K8s pod restarts 
+# The same result could be achieved by applying max without(instance,pod)
+# --
+# All the queries are also filtered by the "environment" label: i.e. to not mix metrics coming from staging and production environments
+
+{{ if and .Values.prometheusRules.enabled ( ne .Values.config.environment "ci" ) }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -12,7 +17,7 @@ spec:
     - alert: ScanStallShort
       annotations:
         message: 'Scanner got stuck for more than 10 minutes at block https://{{`{{ $labels.network }}`}}.subscan.io/block/{{`{{ printf "polkadot_watcher_tx_scan_height{instance=''%s''}" $labels.instance | query | first | value | printf "%.0f" }}`}} | Please check the {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}} service'
-      expr: increase(polkadot_watcher_tx_scan_height[10m]) == 0
+      expr: max without(instance,pod) (increase(polkadot_watcher_tx_scan_height{environment="{{ .Values.config.environment }}"}[10m])) == 0
       for: 10m
       labels:
         severity: warning
@@ -20,7 +25,7 @@ spec:
     - alert: ScanStallLong
       annotations:
         message: 'Scanner got stuck for more than 20 minutes at block https://{{`{{ $labels.network }}`}}.subscan.io/block/{{`{{ printf "polkadot_watcher_tx_scan_height{instance=''%s''}" $labels.instance | query | first | value | printf "%.0f" }}`}} | Please check the {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}} service'
-      expr: increase(polkadot_watcher_tx_scan_height[10m]) == 0
+      expr: max without(instance,pod) (increase(polkadot_watcher_tx_scan_height{environment="{{ .Values.config.environment }}"}[10m])) == 0
       for: 20m
       labels:
         severity: critical
