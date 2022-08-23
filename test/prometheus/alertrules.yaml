@@ -6,7 +6,7 @@ evaluation_interval: 1m
 tests:
     - interval: 1m
       input_series:
-          - series: 'polkadot_watcher_tx_scan_height{service="polkadot-watcher-tx", namespace="monitoring", network="polkadot"}'
+          - series: 'polkadot_watcher_tx_scan_height{service="polkadot-watcher-tx", namespace="monitoring", network="polkadot", environment="production"}'
             values: '0+0x21 1'       
 
       alert_rule_test:
@@ -24,6 +24,7 @@ tests:
                     namespace: monitoring
                     network: polkadot
                     origin: clusterName
+                    environment: production
                   exp_annotations:
                      message: "Scanner got stuck for more than 10 minutes at block https://polkadot.subscan.io/block/0 | Please check the monitoring/polkadot-watcher-tx service"  
           # Test ScanStallLong NO alert
@@ -40,6 +41,7 @@ tests:
                     namespace: monitoring
                     network: polkadot
                     origin: clusterName
+                    environment: production
                   exp_annotations:
                      message: "Scanner got stuck for more than 20 minutes at block https://polkadot.subscan.io/block/0 | Please check the monitoring/polkadot-watcher-tx service"
           # Test ScanStallShort NO alert, resolved

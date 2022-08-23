@@ -7,3 +7,4 @@ export const scanIntervalMillis = 300000 //5 minutes
 export const retriesBeforeLeave = 5
 export const delayBeforeRetryMillis = 5000 //5 seconds
 export const dataFileName = "lastChecked.txt"
+export const environment = "production"

@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import '@polkadot/api-augment'; //https://github.com/polkadot-js/api/issues/4450
-import { Logger } from '@w3f/logger';
 import { Client, Keyring } from '@w3f/polkadot-api-client';
 import { TransactionData } from '../src/types';
 import { initClient, sendFromAToB } from './utils';
@@ -11,6 +10,7 @@ import { delay, isBalanceTransferEvent } from '../src/utils';
 import { Event } from '@polkadot/types/interfaces';
 import { Notifier } from '../src/notifier/INotifier';
 import { PromClient } from "../src/types";
+import { Logger, LoggerSingleton } from '../src/logger';
 
 export class NotifierMock implements Notifier{
     private _receivedTransferEvents: Array<TransactionData> = [];
@@ -39,15 +39,16 @@ export class ExtrinsicMock {
   private serverRPC: TestPolkadotRPC;
   private client: Client;
   private keyring: Keyring;
+  private readonly logger: Logger = LoggerSingleton.getInstance()
   
-  constructor(private readonly logger: Logger, serverRPC?: TestPolkadotRPC, client?: Client){
+  constructor(serverRPC?: TestPolkadotRPC, client?: Client){
     if(serverRPC) this.serverRPC = serverRPC
     else{ 
       this.serverRPC = new TestPolkadotRPC() 
       this.serverRPC.start()
     }
     if(client) this.client = client
-    else this.client = initClient(this.serverRPC.endpoint(), this.logger)
+    else this.client = initClient(this.serverRPC.endpoint())
 
     this.keyring = new Keyring({ type: 'sr25519' })
   }
@@ -58,7 +59,7 @@ export class ExtrinsicMock {
   }
 
   private getEvent = async (): Promise<Event> =>{
-    let result: Event
+    let result: Event | null = null
 
     const api = await this.client.api()
 

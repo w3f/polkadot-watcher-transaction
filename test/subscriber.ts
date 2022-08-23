@@ -24,6 +24,7 @@ const dataDir = "./test/data"
 
 const cfg = {
     logLevel: 'info',
+    environment: 'test',
     port: 3000,
     endpoint: 'some_endpoint',
     matrixbot: {
@@ -74,7 +75,7 @@ const logger = createLogger();
 
 const testRPC = new TestPolkadotRPC();
 
-const extrinsicMock = new ExtrinsicMock(logger,testRPC)
+const extrinsicMock = new ExtrinsicMock(testRPC)
 
 const sendFromAliceToBob = async (client?: Client): Promise<void> =>{
 
@@ -142,7 +143,7 @@ describe('Subscriber, with a started new chain...', () => {
           nt = new NotifierMock();
           cfg.endpoint = testRPC.endpoint();
           prometheus = new PrometheusMock();
-          subject = new Subscriber(cfg, nt, prometheus, logger);
+          subject = new Subscriber(cfg, nt, prometheus);
           await subject.start();
       });
 
@@ -195,7 +196,7 @@ describe('Subscriber, with a started new chain...', () => {
         const cfg = cfg2
         cfg.endpoint = testRPC.endpoint();
         prometheus = new PrometheusMock();
-        const subject = new Subscriber(cfg, nt, prometheus, logger);
+        const subject = new Subscriber(cfg, nt, prometheus);
         await subject.start();
     });
 
@@ -227,7 +228,7 @@ describe('Subscriber, with a started new chain...', () => {
         nt = new NotifierMockBroken();
         cfg.endpoint = testRPC.endpoint();
         prometheus = new PrometheusMock();
-        subject = new Subscriber(cfg, nt, prometheus, logger);
+        subject = new Subscriber(cfg, nt, prometheus);
         stub = sinon.stub(process, 'exit');
         await subject.start();
     });

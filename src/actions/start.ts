@@ -1,11 +1,12 @@
 import express from 'express';
 import {  } from "express/";
-import { createLogger } from '@w3f/logger';
 import { Config } from '@w3f/config';
 import { Prometheus } from '../prometheus';
 import { Subscriber } from '../subscriber';
 import { InputConfig } from '../types';
 import { NotifierFactory } from '../notifier/NotifierFactory';
+import { environment } from '../constants';
+import { LoggerSingleton } from '../logger';
 
 const _startServer = (port: number): express.Application =>{
   const server = express();
@@ -30,18 +31,19 @@ const _addTestEndpoint = (server: express.Application, subscriber: Subscriber): 
 
 export const startAction = async (cmd): Promise<void> =>{
     const cfg = new Config<InputConfig>().parse(cmd.config);
-    
-    const logger = createLogger(cfg.logLevel);
-    
+        
     const server = _startServer(cfg.port)
+    const env = cfg.environment ? cfg.environment : environment
 
-    const promClient = new Prometheus(logger);
+    LoggerSingleton.setInstance(cfg.logLevel)
+
+    const promClient = new Prometheus(env);
     promClient.injectMetricsRoute(server)
     promClient.startCollection()
 
-    const notifier = new NotifierFactory(cfg.matrixbot,logger).makeNotifier()
+    const notifier = new NotifierFactory(cfg.matrixbot).makeNotifier()
 
-    const subscriber = new Subscriber(cfg,notifier,promClient,logger);
+    const subscriber = new Subscriber(cfg,notifier,promClient);
     await subscriber.start();
 
     _addTestEndpoint(server,subscriber)

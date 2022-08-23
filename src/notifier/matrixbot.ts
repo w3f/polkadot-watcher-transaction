@@ -1,6 +1,6 @@
-import { Logger } from '@w3f/logger';
 import got from 'got';
 import _ from 'lodash';
+import { Logger, LoggerSingleton } from '../logger';
 
 import {
     TransactionData,
@@ -28,7 +28,10 @@ const MsgTemplate = {
 };
 
 export class Matrixbot implements Notifier {
-    constructor(protected readonly endpoint: string, protected readonly logger: Logger) { }
+
+    private readonly logger: Logger = LoggerSingleton.getInstance()
+
+    constructor(protected readonly endpoint: string) { }
 
     newTransfer = async (data: TransactionData): Promise<boolean> =>{
       const json = this._transferMsg(data);

@@ -1,5 +1,5 @@
 import { ApiPromise} from '@polkadot/api';
-import { Logger } from '@w3f/logger';
+import { Logger, LoggerSingleton } from '../logger';
 import readline from 'readline';
 import {
     TransactionData, TransactionType, SubscriberConfig, Subscribable, PromClient
@@ -18,7 +18,7 @@ export class EventScannerBased implements ISubscriptionModule{
     private readonly networkId: string
     private readonly notifier: Notifier
     private readonly config: SubscriberConfig
-    private readonly logger: Logger
+    private readonly logger: Logger = LoggerSingleton.getInstance()
     private readonly scanIntervalMillis: number
     private dataDir: string
     private dataFileName = dataFileName
@@ -33,7 +33,6 @@ export class EventScannerBased implements ISubscriptionModule{
       this.networkId = params.networkId
       this.notifier = params.notifier
       this.config = params.config
-      this.logger = params.logger
       this.dataDir = this.config.modules.transferEventScanner.dataDir
       this.scanIntervalMillis = this.config.modules.transferEventScanner.scanIntervalMillis ? this.config.modules.transferEventScanner.scanIntervalMillis : scanIntervalMillis
       this.delayBeforeRetryMillis = this.config.modules.transferEventScanner.delayBeforeRetryMillis ? this.config.modules.transferEventScanner.delayBeforeRetryMillis : delayBeforeRetryMillis

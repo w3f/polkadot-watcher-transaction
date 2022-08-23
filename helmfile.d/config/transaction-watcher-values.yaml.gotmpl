@@ -1,5 +1,3 @@
-environment: {{ .Environment.Name }}
-
 {{ if eq .Environment.Name "ci" }}
 image:
   tag: {{ env "CIRCLE_SHA1" | default "kind" }}
@@ -12,3 +10,4 @@ image:
 config:
   port: 3000
   logLevel: debug  
+  environment: {{ .Environment.Name }}
