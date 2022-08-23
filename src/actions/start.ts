@@ -1,6 +1,5 @@
 import express from 'express';
 import {  } from "express/";
-import { createLogger } from '@w3f/logger';
 import { Config } from '@w3f/config';
 import { Prometheus } from '../prometheus';
 import { Subscriber } from '../subscriber';
