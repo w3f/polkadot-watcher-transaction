@@ -1,5 +1,5 @@
 description: Polkadot Watcher
 name: polkadot-watcher-transaction
-version: v0.6.12
-appVersion: v0.6.12
+version: v1.0.0
+appVersion: v1.0.0
 apiVersion: v2
