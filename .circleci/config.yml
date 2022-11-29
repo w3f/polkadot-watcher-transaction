@@ -3,7 +3,7 @@ version: 2
 jobs:
   helmLint:
     docker:
-      - image: web3f/ci-commons:v2.4.16
+      - image: web3f/ci-commons:v3
     steps:
       - checkout
       - run:
@@ -12,8 +12,8 @@ jobs:
 
   unitTest:
     docker:
-      - image: web3f/node-dind:v1.0.0
-      - image: parity/polkadot:v0.9.29 
+      - image: web3f/node-dind:v1
+      - image: parity/polkadot:latest
         name: polkadot
         command: --chain=kusama-dev --ws-port 11000 --alice --ws-external --rpc-methods=Unsafe --rpc-cors=all
     steps:
@@ -23,7 +23,7 @@ jobs:
 
   yarnLint:
     docker:
-      - image: web3f/node-dind:v1.0.0
+      - image: web3f/node-dind:v1
     steps:
       - checkout
       - run: yarn
@@ -32,7 +32,7 @@ jobs:
 
   buildImage:
     docker:
-      - image: web3f/ci-commons:v2.4.16
+      - image: web3f/ci-commons:v3
     steps:
       - checkout
       - setup_remote_docker:
@@ -44,7 +44,7 @@ jobs:
 
   publishImage:
     docker:
-      - image: web3f/ci-commons:v2.4.16
+      - image: web3f/ci-commons:v3
     steps:
       - checkout
       - setup_remote_docker
@@ -54,7 +54,7 @@ jobs:
 
   publishChart:
     docker:
-      - image: web3f/ci-commons:v2.4.16
+      - image: web3f/ci-commons:v3
     steps:
       - checkout
       - run:
@@ -63,7 +63,7 @@ jobs:
 
   integrationTests:
     docker:
-      - image: web3f/ci-commons:v2.4.16
+      - image: web3f/ci-commons:v3
     steps:
       - checkout
       - setup_remote_docker
@@ -74,7 +74,7 @@ jobs:
             
   testPrometheusRules:
     docker:
-      - image: web3f/ci-commons:v2.4.16
+      - image: web3f/ci-commons:v3
     steps:
       - checkout
       - run:
