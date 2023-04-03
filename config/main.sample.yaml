@@ -15,7 +15,16 @@ subscriber:
       scanIntervalMillis: 300000
       retriesBeforeLeave: 5
       delayBeforeRetryMillis: 5000
-  subscriptions:
+  subscriptionsFromGit: #optional
+    enabled: false
+    targets:
+    - platform: GitLab
+      private:
+        enabled: false
+        apiToken: xxx
+      network: kusama
+      url: https://your.gitlab.domain/api/v4/projects/number/repository/files/accounts.yaml/raw?ref=main     
+  subscriptions: #optional
   - name: faucet
     address: Edyfdyoi4KJVdXUJ3SU3nuZYMpg13HHa1SWYtPDCV8UPdxy 
   - name: myAddress
