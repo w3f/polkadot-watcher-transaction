@@ -27,7 +27,19 @@ export interface SubscriptionModuleConfig {
 }
 
 export interface SubscriberConfig {
-  subscriptions: Array<Subscribable>;
+  subscriptions?: Array<Subscribable>;
+  subscriptionsFromGit?: {
+    enabled: boolean;
+    targets: Array<{
+      platform: string;
+      private: {
+          enabled: boolean;
+          apiToken: string;
+      };
+      network?: string;
+      url: string;
+    }>;
+  };
   modules?: {
     transferEventScanner?: SubscriptionModuleConfig;
   };
