@@ -20,7 +20,7 @@ subscriber:
     targets:
     - platform: GitLab
       private:
-        enabled: false
+        enabled: true
         apiToken: xxx
       network: kusama
       url: https://your.gitlab.domain/api/v4/projects/number/repository/files/accounts.yaml/raw?ref=main     

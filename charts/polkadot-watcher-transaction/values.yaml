@@ -20,7 +20,16 @@ config:
         scanIntervalMillis: 300000 #5 minutes
         retriesBeforeLeave: 5
         delayBeforeRetryMillis: 5000
-    subscriptions: 
+    subscriptionsFromGit: #optional
+      enabled: false
+      targets:
+      - platform: GitLab
+        private:
+          enabled: true
+          apiToken: xxx
+        network: kusama
+        url: https://your.gitlab.domain/api/v4/projects/number/repository/files/accounts.yaml/raw?ref=main     
+    subscriptions: #optional
     - name: faucet
       address: EaG2CRhJWPb7qmdcJvy3LiWdh26Jreu9Dx6R1rXxPmYXoDk 
 
