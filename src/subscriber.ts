@@ -7,6 +7,7 @@ import {
 import { EventScannerBased } from './subscriptionModules/eventScannerBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
 import { Notifier } from './notifier/INotifier';
+import { BalanceBelowThreshold } from './subscriptionModules/balanceBelowThreshold';
 
 
 export class Subscriber {
@@ -19,6 +20,7 @@ export class Subscriber {
     private readonly logger: Logger = LoggerSingleton.getInstance()
 
     private eventScannerBased: EventScannerBased;
+    private balanceBelowThreshold: BalanceBelowThreshold;
     
     constructor(
         cfg: InputConfig,
@@ -47,7 +49,8 @@ export class Subscriber {
 
         if(this.logLevel === 'debug') await this._triggerDebugActions()
 
-        this.config.modules?.transferEventScanner?.enabled != false && this.eventScannerBased.subscribe();
+        this.config.modules?.transferEventScanner?.enabled != false && this.eventScannerBased.subscribe(); //default active
+        this.config.modules?.balanceBelowThreshold?.enabled && this.balanceBelowThreshold.subscribe(); //default non active
     }
 
     public triggerTestTransfer = async (): Promise<boolean> => {
@@ -108,6 +111,7 @@ export class Subscriber {
       }
 
       this.eventScannerBased = new EventScannerBased(subscriptionModuleConfig,this.promClient)
+      this.balanceBelowThreshold = new BalanceBelowThreshold(subscriptionModuleConfig,this.promClient)
     }
 
 }

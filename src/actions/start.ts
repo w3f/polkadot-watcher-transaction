@@ -5,7 +5,6 @@ import { Prometheus } from '../prometheus';
 import { Subscriber } from '../subscriber';
 import { InputConfig, Subscribable } from '../types';
 import { NotifierFactory } from '../notifier/NotifierFactory';
-import { environment } from '../constants';
 import { LoggerSingleton } from '../logger';
 import { GitConfigLoaderFactory } from '../gitConfigLoader/gitConfigLoaderFactory';
 
@@ -58,9 +57,8 @@ export const startAction = async (cmd): Promise<void> =>{
     logger.info(`loaded ${cfg.subscriber.subscriptions.length} targets`)
         
     const server = _startServer(cfg.port)
-    const env = cfg.environment ? cfg.environment : environment
-
-    const promClient = new Prometheus(env);
+    
+    const promClient = new Prometheus(cfg);
     promClient.injectMetricsRoute(server)
     promClient.startCollection()
 

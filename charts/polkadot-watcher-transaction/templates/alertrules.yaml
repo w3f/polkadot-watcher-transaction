@@ -4,6 +4,7 @@
 # All the queries are also filtered by the "environment" label: i.e. to not mix metrics coming from staging and production environments
 
 {{ if and .Values.prometheusRules.enabled ( ne .Values.config.environment "ci" ) }}
+{{ if and .Values.subscriber.modules.transferEventScanner.enabled ( ne .Values.config.environment "ci" ) }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -29,5 +30,6 @@ spec:
       for: 20m
       labels:
         severity: critical
-        origin: {{ .Values.prometheusRules.origin }}    
+        origin: {{ .Values.prometheusRules.origin }}
+{{ end }}     
 {{ end }}

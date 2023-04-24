@@ -6,6 +6,9 @@ matrixbot:
   strategy: "Default"
 subscriber:
   modules:
+    balanceBelowThreshold:
+      enabled: false
+      threshold: 10
     transferEventScanner:
       enabled: true
       #startFromBlock: 10527640 
