@@ -51,8 +51,9 @@ export interface SubscriberConfig {
 }
 
 export interface MatrixbotConfig {
-  endpoint: string;
-  strategy?: "TBD" | "Default";
+  enabled: boolean;
+  endpoint?: string;
+  strategy?: "default";
   noDuplicatesWindow?: number;
 }
 
