@@ -8,6 +8,7 @@ config:
   logLevel: info
   environment: production #it is used also to filter the prometheusrules, i.e. to avoid conflicts between production and staging
   matrixbot:
+    enabled: true
     endpoint: "http://matrixbot:8080/skill/eventmanager/webhook"
   subscriber:
     modules:
