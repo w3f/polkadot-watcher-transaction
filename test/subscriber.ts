@@ -28,6 +28,7 @@ const cfg = {
     port: 3000,
     endpoint: 'some_endpoint',
     matrixbot: {
+        enabled: true,
         endpoint: 'some_endpoint'
     },
     subscriber: {

@@ -8,8 +8,7 @@ import { Notifier } from './INotifier';
 
 export class Disabled implements Notifier {
     private readonly logger: Logger = LoggerSingleton.getInstance()
-    constructor() { }
-    newTransfer = async (data: TransactionData): Promise<boolean> =>{
+    newTransfer = async (_data: TransactionData): Promise<boolean> =>{
         this.logger.info("Notifier disabled...")
         return true
     }
