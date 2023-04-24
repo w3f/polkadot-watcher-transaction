@@ -11,6 +11,9 @@ config:
     endpoint: "http://matrixbot:8080/skill/eventmanager/webhook"
   subscriber:
     modules:
+      balanceBelowThreshold:
+        enabled: false
+        threshold: 10
       transferEventScanner:
         enabled: true
         #startFromBlock: 10527640 
@@ -56,8 +59,8 @@ prometheusRules:
 
 resources:
   requests:
-    cpu: "200m"
-    memory: "200Mi"
-  limits:
-    cpu: "600m"
-    memory: "600Mi"
+    cpu: "50m"
+    memory: "100Mi"
+  #limits:
+  #  cpu: "200m"
+  #  memory: "300Mi"

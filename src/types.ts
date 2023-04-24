@@ -13,6 +13,7 @@ export interface Subscribable {
   name: string;
   address: string;
   transferEventScanner?: SubscriptionModuleConfig;
+  threshold?: number;
 }
 
 export interface SubscriptionModuleConfig {
@@ -42,6 +43,10 @@ export interface SubscriberConfig {
   };
   modules?: {
     transferEventScanner?: SubscriptionModuleConfig;
+    balanceBelowThreshold?: {
+      enabled: boolean;
+      threshold: number;
+    };
   };
 }
 
@@ -101,4 +106,6 @@ export interface MatrixbotMsg {
 
 export interface PromClient {
   updateScanHeight(network: string, blockNumber: number): void;
+  updateDesiredBalance(network: string, name: string, address: string, balance?: number): void;
+  updateCurrentBalance(network: string, name: string, address: string, balance: number): void;
 }

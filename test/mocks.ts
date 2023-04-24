@@ -90,6 +90,12 @@ export class ExtrinsicMock {
 
 
 export class PrometheusMock implements PromClient {
+  updateDesiredBalance(network: string, name: string, address: string, balance?: number | undefined): void {
+    throw new Error('Method not implemented.');
+  }
+  updateCurrentBalance(network: string, name: string, address: string, balance: number): void {
+    throw new Error('Method not implemented.');
+  }
   private _scanHeight = 0;
 
   updateScanHeight = (_network: string, blockNumber: number): void => {
