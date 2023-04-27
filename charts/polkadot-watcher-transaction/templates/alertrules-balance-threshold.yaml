@@ -16,7 +16,7 @@ spec:
   - name: {{ .Release.Name }}-balance-threshold.rules
     rules:
     - alert: AccountBalanceBelowDesired
-      annotation:
+      annotations:
         message: 'Target <a href="https://{{`{{ $labels.network }}`}}.subscan.io/account/{{`{{ $labels.address }}`}}">{{`{{ $labels.name }}`}}</a> has less tokens than expected...'
       expr: max without(instance,pod) (last_over_time(polkadot_account_balance_desired[10m]) - last_over_time(polkadot_account_balance_current[10m])) > 0  
       for: 2m
