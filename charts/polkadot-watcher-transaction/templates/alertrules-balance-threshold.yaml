@@ -4,16 +4,16 @@
 # All the queries are also filtered by the "environment" label: i.e. to not mix metrics coming from staging and production environments
 
 {{ if and .Values.prometheusRules.enabled ( ne .Values.config.environment "ci" ) }}
-{{ if and .Values.subscriber.modules.balanceBelowThreshold.enabled ( ne .Values.config.environment "ci" ) }}
+{{ if and .Values.config.subscriber.modules.balanceBelowThreshold.enabled ( ne .Values.config.environment "ci" ) }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   labels:
 {{ toYaml .Values.prometheusRules.labels | indent 4 }}
-  name: {{ .Release.Name }}-Balance-Threshold
+  name: {{ .Release.Name }}-balance-threshold
 spec:
   groups:
-  - name: {{ .Release.Name }}-Balance-Threshold.rules
+  - name: {{ .Release.Name }}-balance-threshold.rules
     rules:
     - alert: AccountBalanceBelowDesired
       annotation:
