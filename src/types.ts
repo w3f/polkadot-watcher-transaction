@@ -14,6 +14,7 @@ export interface Subscribable {
   address: string;
   transferEventScanner?: SubscriptionModuleConfig;
   threshold?: number;
+  thresholdCountReserved?: boolean; 
 }
 
 export interface SubscriptionModuleConfig {

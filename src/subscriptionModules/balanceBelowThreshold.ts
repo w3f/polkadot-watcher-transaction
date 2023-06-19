@@ -32,7 +32,11 @@ export class BalanceBelowThreshold implements ISubscriptionModule{
       await this.api.query.system.account.multi(this.subscriptions.map(a => a.address), (balances) => {
         this.subscriptions.forEach((account, index) => {
           const free = balances[index].data.free;
-          const balance = this.formatBalance(free.toBigInt());
+          let balance = this.formatBalance(free.toBigInt());
+          if(account.thresholdCountReserved){
+            const reserved = balances[index].data.reserved;
+            balance += this.formatBalance(reserved.toBigInt());
+          }
           this.promClient.updateCurrentBalance(this.networkId,account.name,account.address,balance)
           this.logger.info(`Account: ${account.name} | Address ${account.address} -> Balance: ${balance}`);
         });
