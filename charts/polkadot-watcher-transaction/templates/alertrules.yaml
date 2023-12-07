@@ -17,17 +17,17 @@ spec:
     rules:
     - alert: ScanStallShort
       annotations:
-        message: 'Scanner got stuck for more than 10 minutes at block https://{{`{{ $labels.network }}`}}.subscan.io/block/{{`{{ printf "polkadot_watcher_tx_scan_height{instance=''%s''}" $labels.instance | query | first | value | printf "%.0f" }}`}} | Please check the {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}} service'
-      expr: max without(instance,pod) (increase(polkadot_watcher_tx_scan_height{environment="{{ .Values.config.environment }}"}[10m])) == 0
-      for: 10m
+        message: 'Scanner got stuck for more than 20 minutes | Please check the {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}} service'
+      expr: max without(instance,pod) (increase(polkadot_watcher_tx_scan_height{environment="{{ .Values.config.environment }}"}[20m])) == 0
+      for: 20m
       labels:
         severity: warning
         origin: {{ .Values.prometheusRules.origin }}
     - alert: ScanStallLong
       annotations:
-        message: 'Scanner got stuck for more than 20 minutes at block https://{{`{{ $labels.network }}`}}.subscan.io/block/{{`{{ printf "polkadot_watcher_tx_scan_height{instance=''%s''}" $labels.instance | query | first | value | printf "%.0f" }}`}} | Please check the {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}} service'
-      expr: max without(instance,pod) (increase(polkadot_watcher_tx_scan_height{environment="{{ .Values.config.environment }}"}[10m])) == 0
-      for: 20m
+        message: 'Scanner got stuck for more than 40 minutes | Please check the {{`{{ $labels.namespace }}`}}/{{`{{ $labels.service }}`}} service'
+      expr: max without(instance,pod) (increase(polkadot_watcher_tx_scan_height{environment="{{ .Values.config.environment }}"}[20m])) == 0
+      for: 40m
       labels:
         severity: critical
         origin: {{ .Values.prometheusRules.origin }}
