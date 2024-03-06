@@ -19,7 +19,12 @@ export class BalanceBelowThreshold implements ISubscriptionModule{
     }
 
     private formatBalance(free: bigint): number {
-      return Number(free / BigInt(10**this.api.registry.chainDecimals[0]));
+      const decimalPlaces = 1
+      const scalingFactor = 10n ** BigInt(decimalPlaces);
+      const scaledNumerator = free * scalingFactor;
+      const denominator = BigInt(10**this.api.registry.chainDecimals[0])
+      const result = Number(scaledNumerator / denominator) / Number(scalingFactor);
+      return result
     }
 
     public subscribe = async (): Promise<void> => {
