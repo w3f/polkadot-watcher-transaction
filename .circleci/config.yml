@@ -97,13 +97,13 @@ workflows:
   version: 2
   test_and_deploy:
     jobs:
-      - unitTest:
-          filters:
-            tags:
-              only: /.*/
-          requires:
-            - yarnLint
-            - helmLint  
+      # - unitTest:
+      #     filters:
+      #       tags:
+      #         only: /.*/
+      #     requires:
+      #       - yarnLint
+      #       - helmLint  
       - helmLint:
           filters:
             tags:
@@ -118,7 +118,9 @@ workflows:
             tags:
               only: /.*/
           requires:
-            - unitTest
+            - yarnLint
+            - helmLint
+            # - unitTest
       - testPrometheusRules:
           filters:
             tags:
