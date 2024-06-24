@@ -13,9 +13,9 @@ jobs:
   unitTest:
     docker:
       - image: web3f/node-dind:v3
-      - image: parity/polkadot:v1.1.0
+      - image: parity/polkadot:v1.10.0
         name: polkadot
-        command: --chain=kusama-dev --rpc-port 11000 --alice --rpc-external --rpc-methods=Unsafe --rpc-cors=all
+        command: --dev --rpc-port 11000 --rpc-external
     steps:
       - checkout
       - run: yarn
@@ -97,13 +97,13 @@ workflows:
   version: 2
   test_and_deploy:
     jobs:
-      # - unitTest:
-      #     filters:
-      #       tags:
-      #         only: /.*/
-      #     requires:
-      #       - yarnLint
-      #       - helmLint  
+      - unitTest:
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - yarnLint
+            - helmLint  
       - helmLint:
           filters:
             tags:
