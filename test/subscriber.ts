@@ -42,11 +42,11 @@ const cfg = {
       },
       subscriptions: [{
             name: 'Alice',
-            address: 'HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F'
+            address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
         },
         {
             name: 'Bob',
-            address: 'FoQJpPyadYccjavVdTWxpxU7rUEaYhfLCPwXgkfD6Zat9QP'
+            address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'
         }]
     }
 };
@@ -57,14 +57,14 @@ const cfg2 = {
     ...cfg.subscriber,
     subscriptions: [{
           name: 'Alice',
-          address: 'HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F',
+          address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
           transferEventScanner: {
             sent: false,
           }
       },
       {
           name: 'Bob',
-          address: 'FoQJpPyadYccjavVdTWxpxU7rUEaYhfLCPwXgkfD6Zat9QP',
+          address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
           transferEventScanner: {
             received: false,
           }
