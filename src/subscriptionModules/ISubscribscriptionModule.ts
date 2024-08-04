@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/interface-name-prefix */
-
 import { ApiPromise } from "@polkadot/api";
 import { Notifier } from "../notifier/INotifier";
 import { SubscriberConfig } from "../types";
