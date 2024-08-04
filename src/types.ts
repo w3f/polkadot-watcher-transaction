@@ -1,4 +1,32 @@
-import { Balance } from '@polkadot/types/interfaces';
+import "@polkadot/api-augment/polkadot";
+import { Balance, Event, CodecHash, EventRecord } from '@polkadot/types/interfaces';
+import { DeriveAccountRegistration } from '@polkadot/api-derive/accounts/types';
+import { StagingXcmV4Location, StagingXcmV4Xcm, StagingXcmV4Asset } from '@polkadot/types/lookup';
+import { TypeRegistry } from '@polkadot/types';
+
+
+export type ChainId = 'polkadot' | 'kusama'
+
+export { StagingXcmV4Location, StagingXcmV4Xcm, StagingXcmV4Asset, Balance, Event, EventRecord, CodecHash, DeriveAccountRegistration, TypeRegistry }
+
+export interface ChainInfo {
+  id: ChainId;
+  decimals: number[];
+  tokens: string[];
+  SS58: number;
+}
+
+export interface BalancesTransferEvent {
+  origin: string;
+  destination: string;
+  amount: Balance;
+}
+
+export interface XcmSentEvent {
+  origin: StagingXcmV4Location;
+  destination: StagingXcmV4Location;
+  message: StagingXcmV4Xcm;
+}
 
 export interface InputConfig {
     logLevel: string;
@@ -77,7 +105,7 @@ export interface TransactionData extends Subscribable {
 export interface TransferInfo {
   from: string;
   to: string;
-  amount: Balance;
+  amount: string;
 }
 
 export interface InitializedMap {

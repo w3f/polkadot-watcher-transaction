@@ -6,7 +6,8 @@ import { Client, Keyring } from '@w3f/polkadot-api-client';
 import { TransactionData } from '../src/types';
 import { initClient, sendFromAToB } from './utils';
 import { TestPolkadotRPC } from '@w3f/test-utils';
-import { delay, isBalanceTransferEvent } from '../src/utils';
+import { delay } from '../src/utils';
+import { isBalancesTransferEvent } from '../src/transfers';
 import { Event } from '@polkadot/types/interfaces';
 import { Notifier } from '../src/notifier/INotifier';
 import { PromClient } from "../src/types";
@@ -68,7 +69,7 @@ export class ExtrinsicMock {
       events.forEach(async (record) => {
         const { event } = record;
 
-        if (isBalanceTransferEvent(event,api)) {
+        if (isBalancesTransferEvent(event)) {
           unsubscribe()
           result = event
         }

@@ -1,21 +1,24 @@
+import "@polkadot/api-augment/polkadot"
 import { ApiPromise} from '@polkadot/api';
 import { Logger, LoggerSingleton } from '../logger';
 import readline from 'readline';
 import {
-    TransactionData, TransactionType, SubscriberConfig, Subscribable, PromClient
+    TransactionData, TransactionType, SubscriberConfig, Subscribable, PromClient,
+    ChainId, TransferInfo, ChainInfo, Event
 } from '../types';
-import { Event, CodecHash } from '@polkadot/types/interfaces';
-import { closeFile, delay, extractTransferInfoFromEvent, getFileNames, getSubscriptionNotificationConfig, initReadFileStream, initWriteFileStream, isBalanceTransferEvent, isDirEmpty, isDirExistent, makeDir, setIntervalFunction } from '../utils';
-import { formatBalance } from '@polkadot/util/format/formatBalance'
+import { 
+  closeFile, delay, getFileNames, getSubscriptionNotificationConfig, initReadFileStream,
+  initWriteFileStream, isDirEmpty, isDirExistent, makeDir, setIntervalFunction } from '../utils';
+import { extractTransferInfoFromEvent, isTransferEvent } from '../transfers';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Notifier } from '../notifier/INotifier';
 import { dataFileName, delayBeforeRetryMillis, retriesBeforeLeave, scanIntervalMillis } from '../constants';
+import { EventRecord } from "@polkadot/types/interfaces";
 
 export class EventScannerBased implements ISubscriptionModule{
 
     private subscriptions = new Map<string,Subscribable>()
     private readonly api: ApiPromise
-    private readonly networkId: string
     private readonly notifier: Notifier
     private readonly config: SubscriberConfig
     private readonly logger: Logger = LoggerSingleton.getInstance()
@@ -24,20 +27,24 @@ export class EventScannerBased implements ISubscriptionModule{
     private dataFileName = dataFileName
     private retriesBeforeLeave: number
     private delayBeforeRetryMillis: number
+    private chainInfo: ChainInfo
+    private extractTransferInfoFromEvent: (event: Event, chainInfo: ChainInfo, blockNumber: number) => TransferInfo
+    private isTransferEvent: (event: Event) => boolean
 
     private isScanOngoing = false //lock for concurrency
     private isNewScanRequired = false
     
     constructor(params: SubscriptionModuleConstructorParams, private readonly promClient: PromClient) {
       this.api = params.api
-      this.networkId = params.networkId
       this.notifier = params.notifier
       this.config = params.config
       this.dataDir = this.config.modules.transferEventScanner.dataDir
       this.scanIntervalMillis = this.config.modules.transferEventScanner.scanIntervalMillis ? this.config.modules.transferEventScanner.scanIntervalMillis : scanIntervalMillis
       this.delayBeforeRetryMillis = this.config.modules.transferEventScanner.delayBeforeRetryMillis ? this.config.modules.transferEventScanner.delayBeforeRetryMillis : delayBeforeRetryMillis
       this.retriesBeforeLeave = this.config.modules.transferEventScanner.retriesBeforeLeave ? this.config.modules.transferEventScanner.retriesBeforeLeave : retriesBeforeLeave
-      
+      this.extractTransferInfoFromEvent = extractTransferInfoFromEvent
+      this.isTransferEvent = isTransferEvent
+      this.initChainInfo()
       this._initSubscriptions()
     }
 
@@ -47,10 +54,21 @@ export class EventScannerBased implements ISubscriptionModule{
       }
     }
 
+    private async initChainInfo() {
+      this.api.rpc.system.chain().then((chain) => {
+        this.chainInfo = {
+          id: chain.toString().toLowerCase() as ChainId,
+          decimals: this.api.registry.chainDecimals,
+          tokens: this.api.registry.chainTokens,
+          SS58: this.api.registry.chainSS58
+        }
+    })
+  }
+
     public subscribe = async (): Promise<void> => {
 
       await this._initDataDir()
-      this.promClient.updateScanHeight(this.networkId,await this._getLastCheckedBlock())//init prometheus metric
+      this.promClient.updateScanHeight(this.chainInfo.id,await this._getLastCheckedBlock())//init prometheus metric
 
       await this._handleEventsSubscriptions() // scan immediately after a event detection
       this.logger.info(`Event Scanner Based Module subscribed...`)
@@ -74,17 +92,21 @@ export class EventScannerBased implements ISubscriptionModule{
     }
 
     private _handleEventsSubscriptions = async (): Promise<void> => {
-      this.api.query.system.events((events) => {
-        events.forEach(async (record) => {
-          const { event } = record;
-          if(isBalanceTransferEvent(event,this.api)) await this._handleBalanceTransferEvents(event)
-        })
+      this.api.query.system.events(async (records: EventRecord[]) => {
+        for (const { event } of records) {
+          if (this.isTransferEvent(event)) {
+            try {
+              const currentBlockNumber = (await this.api.rpc.chain.getHeader()).number.unwrap().toNumber()
+              const { from, to } = this.extractTransferInfoFromEvent(event, this.chainInfo, currentBlockNumber)
+              if(this.subscriptions.has(from) || this.subscriptions.has(to)) this._requestNewScan()
+            } catch (error) {
+              this.logger.error(`TransferInfo extraction failed: ${error}`)
+              this.logger.warn('quitting...')
+              process.exit(-1);
+            }
+          }
+        }
       })
-    }
-
-    private _handleBalanceTransferEvents = async (event: Event): Promise<void> => {
-      const {from,to} = extractTransferInfoFromEvent(event)
-      if(this.subscriptions.has(from) || this.subscriptions.has(to)) this._requestNewScan()
     }
 
     private _requestNewScan = async (): Promise<void> => {
@@ -132,7 +154,7 @@ export class EventScannerBased implements ISubscriptionModule{
         const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber)
         const block = await this.api.rpc.chain.getBlock(blockHash)
         const allRecords = await this.api.query.system.events.at(blockHash);
-        
+
         
 
         for (const [index, { hash }] of block.block.extrinsics.entries()) {
@@ -140,12 +162,13 @@ export class EventScannerBased implements ISubscriptionModule{
             .filter(({ phase,event }) => 
               phase.isApplyExtrinsic &&
               phase.asApplyExtrinsic.eq(index) && 
-              isBalanceTransferEvent(event,this.api)
+              isTransferEvent(event)
             )) {
 
               let retriesBeforeLeave = this.retriesBeforeLeave
               do {
-                result = await this._balanceTransferHandler(event, hash)
+                const { from, to, amount } = this.extractTransferInfoFromEvent(event, this.chainInfo, blockNumber)
+                result = await this._transferNotificationHandler(from, to, amount, hash.toString())
                 if(!result){
                   retriesBeforeLeave--
                   this.logger.warn(`New retry at block ${blockNumber} !!`)
@@ -170,10 +193,8 @@ export class EventScannerBased implements ISubscriptionModule{
       this.logger.info(`\n*****\nSCAN completed at block ${await this._getLastCheckedBlock()}\n*****`)
     }
 
-    private _balanceTransferHandler = async (event: Event, extrinsicHash: CodecHash): Promise<boolean> => {
+    private _transferNotificationHandler = async (from: string, to: string, amount: string, extrinsicHash: string): Promise<boolean> => {
       //this.logger.debug('Balances Transfer Event Detected')
-      const {from,to,amount} = extractTransferInfoFromEvent(event)
-
       let isNewNotificationDelivered = false
       let isNewNotificationNecessary = false
 
@@ -185,15 +206,15 @@ export class EventScannerBased implements ISubscriptionModule{
         const data: TransactionData = {
           name: this.subscriptions.get(from).name,
           address: from,
-          networkId: this.networkId,
+          networkId: this.chainInfo.id,
           txType: TransactionType.Sent,
-          hash: extrinsicHash.toString(),
-          amount: formatBalance(amount,{decimals:this.api.registry.chainDecimals[0]})
+          hash: extrinsicHash,
+          amount
         };
 
         notificationConfigFrom = getSubscriptionNotificationConfig(this.config.modules?.transferEventScanner,this.subscriptions.get(from).transferEventScanner)
         if(notificationConfigFrom.sent){
-          this.logger.info(`Balances Transfer Event from ${from} detected`)
+          this.logger.info(`Transfer from ${from} detected`)
           isNewNotificationDelivered = await this._notifyNewTransfer(data)
         }
       }
@@ -203,22 +224,22 @@ export class EventScannerBased implements ISubscriptionModule{
         const data: TransactionData = {
           name: this.subscriptions.get(to).name,
           address: to,
-          networkId: this.networkId,
+          networkId: this.chainInfo.id,
           txType: TransactionType.Received,
-          hash: extrinsicHash.toString(),
-          amount: formatBalance(amount,{decimals:this.api.registry.chainDecimals[0]})
+          hash: extrinsicHash,
+          amount
         };
         
         notificationConfigTo = getSubscriptionNotificationConfig(this.config.modules?.transferEventScanner,this.subscriptions.get(to).transferEventScanner)
         if(notificationConfigTo.received){
-          this.logger.info(`Balances Transfer Event to ${to} detected`)
+          this.logger.info(`Transfer to ${to} detected`)
           isNewNotificationDelivered = await this._notifyNewTransfer(data)
         }
       }
 
       if(isNewNotificationNecessary && !notificationConfigFrom?.sent && !notificationConfigTo?.received){
         isNewNotificationNecessary = false
-        this.logger.debug(`Balances Transfer Event from ${from} to ${to} detected. Notification SUPPRESSED`)
+        this.logger.debug(`Transfer from ${from} to ${to} detected. Notification SUPPRESSED`)
       }
       
       return isNewNotificationDelivered || !isNewNotificationNecessary
@@ -252,7 +273,7 @@ export class EventScannerBased implements ISubscriptionModule{
       const file = initWriteFileStream(this.dataDir,this.dataFileName,this.logger)
       const result = file.write(blockNumber.toString())
       await closeFile(file)
-      if(result) this.promClient.updateScanHeight(this.networkId,blockNumber)
+      if(result) this.promClient.updateScanHeight(this.chainInfo.id,blockNumber)
       return result
     }
 
