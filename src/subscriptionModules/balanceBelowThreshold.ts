@@ -34,7 +34,7 @@ export class BalanceBelowThreshold implements ISubscriptionModule{
         this.promClient.updateDesiredBalance(this.networkId,account.name,account.address,account.threshold)
       }
 
-      await this.api.query.system.account.multi(this.subscriptions.map(a => a.address), (balances) => {
+      await this.api.query.system.account.multi(this.subscriptions.map(a => a.address), (balances: any) => {
         this.subscriptions.forEach((account, index) => {
           const free = balances[index].data.free;
           let balance = this.formatBalance(free.toBigInt());

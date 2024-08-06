@@ -1,17 +1,16 @@
+import '@polkadot/api-augment/polkadot'
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Logger, LoggerSingleton } from './logger';
-import { Text } from '@polkadot/types/primitive';
-import {
-    InputConfig, PromClient, SubscriberConfig, TransactionData, TransactionType
-} from './types';
+import { InputConfig, PromClient, SubscriberConfig, TransactionData, TransactionType, TypeRegistry } from './types';
 import { EventScannerBased } from './subscriptionModules/eventScannerBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
 import { Notifier } from './notifier/INotifier';
 import { BalanceBelowThreshold } from './subscriptionModules/balanceBelowThreshold';
 
 
+export const registry = new TypeRegistry()
+
 export class Subscriber {
-    private chain: Text;
     private api: ApiPromise;
     private networkId: string;
     private endpoint: string;
@@ -75,7 +74,7 @@ export class Subscriber {
     private _initAPI = async (): Promise<void> =>{
         const provider = new WsProvider(this.endpoint);
 
-        this.api = new ApiPromise({provider})
+        this.api = new ApiPromise({provider, registry})
         if(this.api){
           this.api.on("error", error => {
             if( error.toString().includes("FATAL") || JSON.stringify(error).includes("FATAL") ){
@@ -86,14 +85,14 @@ export class Subscriber {
         }
         await this.api.isReadyOrError;
         
-        this.chain = await this.api.rpc.system.chain();
-        this.networkId = this.chain.toString().toLowerCase()
+        const chain = await this.api.rpc.system.chain();
+        this.networkId = chain.toString().toLowerCase()
         const [nodeName, nodeVersion] = await Promise.all([
             this.api.rpc.system.name(),
             this.api.rpc.system.version()
         ]);
         this.logger.info(
-            `You are connected to chain ${this.chain} using ${nodeName} v${nodeVersion}`
+            `You are connected to chain ${this.networkId} using ${nodeName} v${nodeVersion}`
         );
     }
 

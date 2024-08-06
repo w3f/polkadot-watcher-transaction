@@ -1,7 +1,5 @@
-import '@polkadot/api-augment'; //https://github.com/polkadot-js/api/issues/4450
 import { Client, Keyring } from '@w3f/polkadot-api-client';
 import { TestPolkadotRPC } from '@w3f/test-utils';
-import { createLogger } from '@w3f/logger';
 import { should } from 'chai';
 import { Subscriber } from '../src/subscriber';
 import {
@@ -13,8 +11,9 @@ import {
 import { TransactionType } from '../src/types';
 import { initClient, sendFromAToB  } from './utils';
 import { isDirExistent, rmDir } from '../src/utils';
-import { CodecHash } from '@polkadot/types/interfaces';
+import { extractTransferInfoFromEvent } from '../src/transfers';
 import sinon from 'sinon'
+import { chainsInfo } from '../src/constants';
 
 should();
 
@@ -72,8 +71,6 @@ const cfg2 = {
   }
 };
 
-const logger = createLogger();
-
 const testRPC = new TestPolkadotRPC();
 
 const extrinsicMock = new ExtrinsicMock(testRPC)
@@ -110,15 +107,6 @@ const checkNotifiedTransactionEvent = (expectedName: string, expectedTxType: Tra
     found.should.be.true; 
   else
   found.should.be.false; 
-}
-
-const createCodecHash = async (client?: Client): Promise<CodecHash> =>{
-
-  if(!client){
-    client = initClient(testRPC.endpoint())
-  }
-
-  return (await client.api()).createType('CodecHash')
 }
 
 describe('Subscriber, with a started new chain...', () => {
@@ -164,24 +152,24 @@ describe('Subscriber, with a started new chain...', () => {
       describe('transferBalancesEventHandler', async () => {
         it('is transferBalances event, our addresses are not involved so a notification is not necessary', async () => {
             const event = await extrinsicMock.generateTransferEvent('//Charlie','//Dave')
-
-            const result = await subject["eventScannerBased"]["_balanceTransferHandler"](event,await createCodecHash())
+            const transfer = extractTransferInfoFromEvent(event, chainsInfo.polkadot, 1)
+            const result = await subject["eventScannerBased"]["_transferNotificationHandler"](transfer, '')
 
             result.should.be.true
         });
 
         it('is transferBalances event 1', async () => {
             const event = await extrinsicMock.generateTransferEvent('//Alice','//Bob')
-
-            const result = await subject["eventScannerBased"]["_balanceTransferHandler"](event,await createCodecHash())
+            const transfer = extractTransferInfoFromEvent(event, chainsInfo.polkadot, 1)
+            const result = await subject["eventScannerBased"]["_transferNotificationHandler"](transfer, '')
 
             result.should.be.true
         });
 
         it('is transferBalances event 2', async () => {
           const event = await extrinsicMock.generateTransferEvent('//Bob','//Alice')
-
-          const result = await subject["eventScannerBased"]["_balanceTransferHandler"](event,await createCodecHash())
+          const transfer = extractTransferInfoFromEvent(event, chainsInfo.polkadot, 1)
+          const result = await subject["eventScannerBased"]["_transferNotificationHandler"](transfer, '')
 
           result.should.be.true
         });
@@ -251,8 +239,8 @@ describe('Subscriber, with a started new chain...', () => {
     describe('transferBalancesEventHandler', async () => {
       it('is transferBalances event, but the notifier is broken', async () => {
           const event = await extrinsicMock.generateTransferEvent('//Alice','//Bob')
-
-          const result = await subject["eventScannerBased"]["_balanceTransferHandler"](event,await createCodecHash())
+          const transfer = extractTransferInfoFromEvent(event, chainsInfo.polkadot, 1)
+          const result = await subject["eventScannerBased"]["_transferNotificationHandler"](transfer, '')
 
           result.should.be.false
       });

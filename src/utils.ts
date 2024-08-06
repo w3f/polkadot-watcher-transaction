@@ -1,9 +1,6 @@
 import fs, { ReadStream, WriteStream } from 'fs';
 import { Logger } from '@w3f/logger';
-import { DeriveAccountRegistration } from '@polkadot/api-derive/accounts/types';
-import { Event, Balance } from '@polkadot/types/interfaces';
-import { SubscriptionModuleConfig, TransferInfo } from './types';
-import { ApiPromise } from '@polkadot/api';
+import { SubscriptionModuleConfig, DeriveAccountRegistration  } from './types';
 
 export const isDirEmpty = (path: string): boolean =>{
   return fs.readdirSync(path).length === 0
@@ -85,22 +82,10 @@ export const getDisplayName = (identity: DeriveAccountRegistration): string =>{
   }
 }
 
-export const asyncForEach = async < T extends {} > (array: Array<T>, callback: (arg0: T, arg1: number, arg2: Array<T>) => void): Promise<void> =>{
+export const asyncForEach = async <T> (array: Array<T>, callback: (arg0: T, arg1: number, arg2: Array<T>) => void): Promise<void> =>{
   for (let index = 0; index < array.length; index++) {
       await callback(array[index], index, array);
   }
-}
-
-export const isBalanceTransferEvent = (event: Event, api: ApiPromise): boolean => {
-  return api.events.balances.Transfer.is(event)
-}
-
-export const extractTransferInfoFromEvent = (event: Event): TransferInfo =>{
-  const from = event.data[0].toString()
-  const to = event.data[1].toString()
-  const amount = event.data[2] as unknown as Balance
-
-  return {from,to,amount}
 }
 
 export const getSubscriptionNotificationConfig = (config: SubscriptionModuleConfig, configSpecific: SubscriptionModuleConfig): {sent: boolean; received: boolean} => {

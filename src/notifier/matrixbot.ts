@@ -76,13 +76,14 @@ export class Matrixbot implements Notifier {
 
       let description: string;
       let alertname: string;
+      const chainName = data.networkId[0].toUpperCase() + data.networkId.slice(1)
       const checkUrl = data.hash ? `https://${data.networkId}.subscan.io/extrinsic/${data.hash} for details.` : `https://${data.networkId}.subscan.io/account/${data.address}?tab=transfer for details.`
 
       if (data.txType === TransactionType.Sent) {
-          description = `New Transfer of ${data.amount} sent from the account ${data.name}, check ${checkUrl}`;
+          description = `New Transfer of ${data.amount} ${data.token} sent from the ${chainName} account ${data.name}, check ${checkUrl}`;
           alertname = 'TransferSent';
       } else {
-          description = `New Transfer of ${data.amount} received in the account ${data.name}, check ${checkUrl}`;
+          description = `New Transfer of ${data.amount} ${data.token} received in the ${chainName} account ${data.name}, check ${checkUrl}`;
           alertname = 'TransferReceived';
       }
       msg.alerts[0].labels.alertname = alertname;
