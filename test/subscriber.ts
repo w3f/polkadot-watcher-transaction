@@ -8,11 +8,12 @@ import {
     NotifierMockBroken,
     PrometheusMock,
 } from './mocks';
-import { ChainInfo, TransactionType } from '../src/types';
+import { TransactionType } from '../src/types';
 import { initClient, sendFromAToB  } from './utils';
 import { isDirExistent, rmDir } from '../src/utils';
 import { extractTransferInfoFromEvent } from '../src/transfers';
 import sinon from 'sinon'
+import { chainsInfo } from '../src/constants';
 
 should();
 
@@ -108,8 +109,6 @@ const checkNotifiedTransactionEvent = (expectedName: string, expectedTxType: Tra
   found.should.be.false; 
 }
 
-const chainInfo: ChainInfo = { id: 'polkadot', decimals: [10], tokens: ['DOT'], SS58: 0 };
-
 describe('Subscriber, with a started new chain...', () => {
   before(async () => {
       // we are starting a chain from scratch
@@ -153,24 +152,24 @@ describe('Subscriber, with a started new chain...', () => {
       describe('transferBalancesEventHandler', async () => {
         it('is transferBalances event, our addresses are not involved so a notification is not necessary', async () => {
             const event = await extrinsicMock.generateTransferEvent('//Charlie','//Dave')
-            const {from, to, amount } = extractTransferInfoFromEvent(event, chainInfo, 1)
-            const result = await subject["eventScannerBased"]["_transferNotificationHandler"](from, to, amount, '')
+            const transfer = extractTransferInfoFromEvent(event, chainsInfo.polkadot, 1)
+            const result = await subject["eventScannerBased"]["_transferNotificationHandler"](transfer, '')
 
             result.should.be.true
         });
 
         it('is transferBalances event 1', async () => {
             const event = await extrinsicMock.generateTransferEvent('//Alice','//Bob')
-            const {from, to, amount } = extractTransferInfoFromEvent(event, chainInfo, 1)
-            const result = await subject["eventScannerBased"]["_transferNotificationHandler"](from, to, amount, '')
+            const transfer = extractTransferInfoFromEvent(event, chainsInfo.polkadot, 1)
+            const result = await subject["eventScannerBased"]["_transferNotificationHandler"](transfer, '')
 
             result.should.be.true
         });
 
         it('is transferBalances event 2', async () => {
           const event = await extrinsicMock.generateTransferEvent('//Bob','//Alice')
-          const {from, to, amount } = extractTransferInfoFromEvent(event, chainInfo, 1)
-          const result = await subject["eventScannerBased"]["_transferNotificationHandler"](from, to, amount, '')
+          const transfer = extractTransferInfoFromEvent(event, chainsInfo.polkadot, 1)
+          const result = await subject["eventScannerBased"]["_transferNotificationHandler"](transfer, '')
 
           result.should.be.true
         });
@@ -240,8 +239,8 @@ describe('Subscriber, with a started new chain...', () => {
     describe('transferBalancesEventHandler', async () => {
       it('is transferBalances event, but the notifier is broken', async () => {
           const event = await extrinsicMock.generateTransferEvent('//Alice','//Bob')
-          const {from, to, amount } = extractTransferInfoFromEvent(event, chainInfo, 1)
-          const result = await subject["eventScannerBased"]["_transferNotificationHandler"](from, to, amount, '')
+          const transfer = extractTransferInfoFromEvent(event, chainsInfo.polkadot, 1)
+          const result = await subject["eventScannerBased"]["_transferNotificationHandler"](transfer, '')
 
           result.should.be.false
       });

@@ -1,4 +1,3 @@
-import "@polkadot/api-augment/polkadot"
 import { ApiPromise} from '@polkadot/api';
 import { Logger, LoggerSingleton } from '../logger';
 import readline from 'readline';
@@ -12,7 +11,7 @@ import {
 import { extractTransferInfoFromEvent, isTransferEvent } from '../transfers';
 import { ISubscriptionModule, SubscriptionModuleConstructorParams } from './ISubscribscriptionModule';
 import { Notifier } from '../notifier/INotifier';
-import { dataFileName, delayBeforeRetryMillis, retriesBeforeLeave, scanIntervalMillis } from '../constants';
+import { chainsInfo, dataFileName, delayBeforeRetryMillis, retriesBeforeLeave, scanIntervalMillis } from '../constants';
 import { EventRecord } from "@polkadot/types/interfaces";
 
 export class EventScannerBased implements ISubscriptionModule{
@@ -44,7 +43,7 @@ export class EventScannerBased implements ISubscriptionModule{
       this.retriesBeforeLeave = this.config.modules.transferEventScanner.retriesBeforeLeave ? this.config.modules.transferEventScanner.retriesBeforeLeave : retriesBeforeLeave
       this.extractTransferInfoFromEvent = extractTransferInfoFromEvent
       this.isTransferEvent = isTransferEvent
-      this.initChainInfo()
+      this.chainInfo = chainsInfo[params.networkId as ChainId]
       this._initSubscriptions()
     }
 
@@ -53,17 +52,6 @@ export class EventScannerBased implements ISubscriptionModule{
         this.subscriptions.set(subscription.address,subscription)
       }
     }
-
-    private async initChainInfo() {
-      this.api.rpc.system.chain().then((chain) => {
-        this.chainInfo = {
-          id: chain.toString().toLowerCase() as ChainId,
-          decimals: this.api.registry.chainDecimals,
-          tokens: this.api.registry.chainTokens,
-          SS58: this.api.registry.chainSS58
-        }
-    })
-  }
 
     public subscribe = async (): Promise<void> => {
 
@@ -95,12 +83,14 @@ export class EventScannerBased implements ISubscriptionModule{
       this.api.query.system.events(async (records: EventRecord[]) => {
         for (const { event } of records) {
           if (this.isTransferEvent(event)) {
+            const currentBlockNumber = (await this.api.rpc.chain.getHeader()).number.unwrap().toNumber()
             try {
-              const currentBlockNumber = (await this.api.rpc.chain.getHeader()).number.unwrap().toNumber()
-              const { from, to } = this.extractTransferInfoFromEvent(event, this.chainInfo, currentBlockNumber)
-              if(this.subscriptions.has(from) || this.subscriptions.has(to)) this._requestNewScan()
+              const transfer = this.extractTransferInfoFromEvent(event, this.chainInfo, currentBlockNumber)
+              if(
+                this.subscriptions.has(transfer.origin.address) || 
+                this.subscriptions.has(transfer.destination.address)) this._requestNewScan()
             } catch (error) {
-              this.logger.error(`TransferInfo extraction failed: ${error}`)
+              this.logger.error(`TransferInfo extraction failed at block ${currentBlockNumber}: ${error}`)
               this.logger.warn('quitting...')
               process.exit(-1);
             }
@@ -167,8 +157,8 @@ export class EventScannerBased implements ISubscriptionModule{
 
               let retriesBeforeLeave = this.retriesBeforeLeave
               do {
-                const { from, to, amount } = this.extractTransferInfoFromEvent(event, this.chainInfo, blockNumber)
-                result = await this._transferNotificationHandler(from, to, amount, hash.toString())
+                const transfer = this.extractTransferInfoFromEvent(event, this.chainInfo, blockNumber)
+                result = await this._transferNotificationHandler(transfer, hash.toString())
                 if(!result){
                   retriesBeforeLeave--
                   this.logger.warn(`New retry at block ${blockNumber} !!`)
@@ -193,13 +183,16 @@ export class EventScannerBased implements ISubscriptionModule{
       this.logger.info(`\n*****\nSCAN completed at block ${await this._getLastCheckedBlock()}\n*****`)
     }
 
-    private _transferNotificationHandler = async (from: string, to: string, amount: string, extrinsicHash: string): Promise<boolean> => {
+    private _transferNotificationHandler = async (transfer: TransferInfo, extrinsicHash: string): Promise<boolean> => {
       //this.logger.debug('Balances Transfer Event Detected')
       let isNewNotificationDelivered = false
       let isNewNotificationNecessary = false
 
       let notificationConfigFrom: {sent: boolean; received: boolean}
       let notificationConfigTo: {sent: boolean; received: boolean} 
+
+      const from = transfer.origin.address
+      const to = transfer.destination.address
 
       if(this.subscriptions.has(from)){
         isNewNotificationNecessary = true
@@ -209,7 +202,8 @@ export class EventScannerBased implements ISubscriptionModule{
           networkId: this.chainInfo.id,
           txType: TransactionType.Sent,
           hash: extrinsicHash,
-          amount
+          amount: transfer.amount,
+          token: transfer.token
         };
 
         notificationConfigFrom = getSubscriptionNotificationConfig(this.config.modules?.transferEventScanner,this.subscriptions.get(from).transferEventScanner)
@@ -227,7 +221,8 @@ export class EventScannerBased implements ISubscriptionModule{
           networkId: this.chainInfo.id,
           txType: TransactionType.Received,
           hash: extrinsicHash,
-          amount
+          amount: transfer.amount,
+          token: transfer.token
         };
         
         notificationConfigTo = getSubscriptionNotificationConfig(this.config.modules?.transferEventScanner,this.subscriptions.get(to).transferEventScanner)

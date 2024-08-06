@@ -11,8 +11,8 @@ export const xcmTests  = {
         chain: "Kusama"
       },
       destination: {
-      address: "EAs8ocCfK72QQNC3H3PzC4hdmo9dtUth8Unb4kgbozZyuAz",
-      chain: "AssetHub Kusama"
+        address: "EAs8ocCfK72QQNC3H3PzC4hdmo9dtUth8Unb4kgbozZyuAz",
+        chain: "AssetHub"
       },
       token: "KSM",
       amount: "0.0250"
@@ -150,7 +150,7 @@ export const xcmTests  = {
       },
       destination: {
         address: "15dkzFquMdELBU3CpYqxW86ZDywBqfm3DcCxFYyDgsB4fbhL",
-        chain: "Polimec"
+        chain: "Parachain 3344"
       },
       token: "DOT",
       amount: "2.0000"

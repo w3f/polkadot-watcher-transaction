@@ -1,4 +1,5 @@
 import { Balance } from '@polkadot/types/interfaces';
+import { ChainId } from './types';
 import BN from 'bn.js';
 
 export const ZeroBN = new BN(0);
@@ -8,12 +9,17 @@ export const retriesBeforeLeave = 5
 export const delayBeforeRetryMillis = 5000 //5 seconds
 export const dataFileName = "lastChecked.txt"
 export const environment = "production"
+export const chainsInfo = {
+  kusama: { id: 'kusama' as ChainId, decimals: [12], tokens: ['KSM'], SS58: 2 },
+  polkadot: { id: 'polkadot' as ChainId, decimals: [10], tokens: ['DOT'], SS58: 0 },
+  development: { id: 'polkadot' as ChainId, decimals: [10], tokens: ['DOT'], SS58: 0 }
+}
 export const parachainNames = {
   polkadot: {
-    "1000": "AssetHub Polkadot",
-    "1001": "Collectives Polkadot",
-    "1002": "BridgeHub Polkadot",
-    "1004": "People Polkadot",
+    "1000": "AssetHub",
+    "1001": "Collectives",
+    "1002": "BridgeHub",
+    "1004": "People",
     "2000": "Acala",
     "2002": "Clover",
     "2004": "Moonbeam",
@@ -46,13 +52,13 @@ export const parachainNames = {
     "3369": "Mythos"
   },
   kusama: {
-    "1000": "AssetHub Kusama",
-    "1001": "Collectives Kusama",
-    "1002": "BridgeHub Kusama",
-    "1004": "People Kusama",
-    "1005": "Coretime Kusama",
+    "1000": "AssetHub",
+    "1001": "Collectives",
+    "1002": "BridgeHub",
+    "1004": "People",
+    "1005": "Coretime",
     "2000": "Karura",
-    "2001": "Bifrost Kusama",
+    "2001": "Bifrost",
     "2004": "Khala Network",
     "2007": "Shiden",
     "2011": "SORA",

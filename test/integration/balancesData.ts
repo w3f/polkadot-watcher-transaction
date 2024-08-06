@@ -13,7 +13,7 @@ export const balancesTests  = {
         address: "FU8YDYuuvCrLh5DoaNu3oQa1GrocjDD129yqbJ5t2qE31K2",
         chain: "Kusama"
       },
-      token: "DOT",
+      token: "KSM",
       amount: "12,105.0000",
     }
   ],

@@ -1,8 +1,9 @@
-import "@polkadot/api-augment/polkadot";
+import '@polkadot/api-augment/polkadot';
 import { Balance, Event, CodecHash, EventRecord } from '@polkadot/types/interfaces';
 import { DeriveAccountRegistration } from '@polkadot/api-derive/accounts/types';
 import { StagingXcmV4Location, StagingXcmV4Xcm, StagingXcmV4Asset } from '@polkadot/types/lookup';
 import { TypeRegistry } from '@polkadot/types';
+import { string } from 'yaml/dist/schema/common/string';
 
 
 export type ChainId = 'polkadot' | 'kusama'
@@ -100,11 +101,19 @@ export interface TransactionData extends Subscribable {
   networkId: string;
   hash?: string;
   amount?: string;
+  token?: string;
 }
 
 export interface TransferInfo {
-  from: string;
-  to: string;
+  origin: {
+    address: string;
+    chain: string;
+  };
+  destination: {
+    address: string;
+    chain: string;
+  };
+  token: string;
   amount: string;
 }
 

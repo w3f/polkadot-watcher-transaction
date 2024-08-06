@@ -1,15 +1,14 @@
-import '@polkadot/api-augment/polkadot'
 import { Logger, LoggerSingleton } from './logger';
 import { hexToU8a, formatBalance } from '@polkadot/util';
 import { encodeAddress } from '@polkadot/util-crypto';
 import {
     Event, TransferInfo, XcmSentEvent, StagingXcmV4Xcm, StagingXcmV4Location, StagingXcmV4Asset,
-    ChainInfo, BalancesTransferEvent, Balance, TypeRegistry } from './types';
+    ChainInfo, BalancesTransferEvent, Balance } from './types';
 import { parachainNames } from './constants';
+import { registry } from './subscriber';
 
 
 const log: Logger = LoggerSingleton.getInstance()
-export const registry = new TypeRegistry()
 
 
 export const isTransferEvent = (event: Event): boolean => {
@@ -64,11 +63,10 @@ export const extractTransferInfoFromEvent = (event: Event, chainInfo: ChainInfo,
  * @returns {TransferInfo} An object containing the 'from', 'to', and 'amount' of the transfer.
  */
 function extractTransferInfoFromXcmEvent(event: XcmSentEvent, chainInfo: ChainInfo,  blockNumber: number): TransferInfo {
-    const result = {from: undefined, to: undefined, amount: undefined}
     const { origin, message } = event
     let { destination } = event
     // 1. Get origin from the MultiLocation (X1.AccountId32)
-    result.from = getLocation(origin, chainInfo, blockNumber)
+    const originAddress = getLocation(origin, chainInfo, blockNumber)
     // 2. Get beneficiary
     // 2.1. Try from "DepositAsset" instruction, which is common for most of extrinsics
     let beneficiaryInstruction = findInstruction(message, 'DepositAsset');
@@ -80,37 +78,42 @@ function extractTransferInfoFromXcmEvent(event: XcmSentEvent, chainInfo: ChainIn
             beneficiaryInstruction = findInstruction(depositRA.xcm, 'DepositAsset');
             // Real destination is in the nested XCM message
             destination = depositRA.dest;
-        } else {
-            return result
         }
     }
     if (!beneficiaryInstruction) {
-        console.error(`XCM. No beneficiary instructions found. Block: ${blockNumber}`);
-        return result
+        throw new Error(`XCM. No beneficiary instructions found. Block: ${blockNumber}`);
     }
-    result.to = getLocation(beneficiaryInstruction.beneficiary, chainInfo, blockNumber)
+    const destinationAddress = getLocation(beneficiaryInstruction.beneficiary, chainInfo, blockNumber)
     // 3. Get assets information
     const assetInstruction = findInstruction(message, 'ReserveAssetDeposited') || 
                              findInstruction(message, 'ReceiveTeleportedAsset');
     
     if (!assetInstruction) {
-        console.error(`XCM. No assets instructions found. Block: ${blockNumber}`);
-        return result
+        throw new Error(`XCM. No assets instructions found. Block: ${blockNumber}`);
     }
-    // Destination chain and tokens info are not yet used.
-    // Ex.: const destChain = getLocation(destination, chainInfo, blockNumber)
+    const destChain = getLocation(destination, chainInfo, blockNumber)
     const transfers = getTokenAmountFromAsset(
         assetInstruction,
         chainInfo,
         blockNumber
     )
-    if (transfers.length > 0) {
-        const [_token, amount] = transfers[0]
-        result.amount = amount
-    } else {
-        console.error(`XCM. No assets found inside of instruction. Block: ${blockNumber}`);
+    if (transfers.length === 0) {
+        throw new Error(`XCM. No assets found inside of instruction. Block: ${blockNumber}`);
     }
-    return result
+    // TODO: AssetHub monitoring. The list of assets should be returned instead.
+    const [token, amount] = transfers[0]
+    return {
+        origin: {
+            address: originAddress,
+            chain: chainInfo.id
+        },
+        destination: {
+            address: destinationAddress,
+            chain: destChain
+        },
+        amount: amount,
+        token: token
+    }
 }
 
 function getLocation(location: StagingXcmV4Location, chainInfo: ChainInfo, blockNumber: number): string {
@@ -148,7 +151,7 @@ function getTokenAmountFromAsset(assets: StagingXcmV4Asset[], chainInfo: ChainIn
         if (interior.isHere) {
             token = chainInfo.tokens[0]
         } else if (interior.isX3) {
-            // Not supported yet. Should be processed for the parachain monitoring
+            // TODO: AssetHub monitoring. The token address should be processed.
             continue
         } else {
             log.error(`Asset Junctions not supported: ${interior.type}. Block ${blockNumber}`)
@@ -169,8 +172,15 @@ export function isXcmSentEvent(event: Event): boolean {
 
 const extractTransferInfoFromBalancesEvent = (event: BalancesTransferEvent, chainInfo: ChainInfo, _blockNumber: number): TransferInfo =>{
     return {
-        from: event.origin,
-        to: event.destination,
-        amount: formatBalance(event.amount, {decimals: chainInfo.decimals[0], withSi: false, forceUnit: '-' })
+        origin: {
+            address: event.origin,
+            chain: chainInfo.id
+        },
+        destination: {
+            address: event.destination,
+            chain: chainInfo.id
+        },
+        amount: formatBalance(event.amount, {decimals: chainInfo.decimals[0], withSi: false, forceUnit: '-' }),
+        token: chainInfo.tokens[0]
     }
 }
