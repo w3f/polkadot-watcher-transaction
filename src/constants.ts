@@ -80,6 +80,7 @@ export const parachainNames = {
     "2119": "Bajun Network",
     "2239": "Acurast",
     "2241": "krest",
+    "2281": "Kreivo",
     "3339": "Curio",
     "3344": "Xode"
   }
