@@ -17,6 +17,23 @@ export const xcmTests  = {
       token: "KSM",
       amount: "0.0250"
     },
+    {
+      description: "Pallet XCM. Call send. Unknown asset instruction",
+      link: "https://kusama.subscan.io/event?extrinsic=24673667-2",
+      messageId: "0xf10ffef1fc2e8cf440808ce6684d556ad01b0f96ce90f7a266c87a2f30873c94",
+      block: 24673667,
+      eventIndex: 54,
+      origin: {
+        address: "HCksmaxivAsisGDkWtm5dhdAt3Ti2e5P2Gt7JXZYFiEHMSH",
+        chain: "Kusama"
+      },
+      destination: {
+        address: "HCksmaxivAsisGDkWtm5dhdAt3Ti2e5P2Gt7JXZYFiEHMSH",
+        chain: "Kreivo"
+      },
+      token: "Unknown",
+      amount: "Unknown"
+    },
   ],
   polkadot: [
     {

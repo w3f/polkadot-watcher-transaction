@@ -80,26 +80,18 @@ function extractTransferInfoFromXcmEvent(event: XcmSentEvent, chainInfo: ChainIn
             destination = depositRA.dest;
         }
     }
-    if (!beneficiaryInstruction) {
-        throw new Error(`XCM. No beneficiary instructions found. Block: ${blockNumber}`);
-    }
-    const destinationAddress = getLocation(beneficiaryInstruction.beneficiary, chainInfo, blockNumber)
+    const destinationAddress = getLocation(beneficiaryInstruction?.beneficiary, chainInfo, blockNumber)
     // 3. Get assets information
     const assetInstruction = findInstruction(message, 'ReserveAssetDeposited') || 
-                             findInstruction(message, 'ReceiveTeleportedAsset');
+                             findInstruction(message, 'ReceiveTeleportedAsset') || [];
     
-    if (!assetInstruction) {
-        throw new Error(`XCM. No assets instructions found. Block: ${blockNumber}`);
-    }
     const destChain = getLocation(destination, chainInfo, blockNumber)
     const transfers = getTokenAmountFromAsset(
         assetInstruction,
         chainInfo,
         blockNumber
     )
-    if (transfers.length === 0) {
-        throw new Error(`XCM. No assets found inside of instruction. Block: ${blockNumber}`);
-    }
+
     // TODO: AssetHub monitoring. The list of assets should be returned instead.
     const [token, amount] = transfers[0]
     return {
@@ -159,7 +151,7 @@ function getTokenAmountFromAsset(assets: StagingXcmV4Asset[], chainInfo: ChainIn
         }
         result.push([token, amount])
     }
-    return result
+    return result.length > 0 ? result : [['Unknown', 'Unknown']]
 }
 
 export const isBalancesTransferEvent = (event: Event): boolean => {
