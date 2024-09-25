@@ -25,6 +25,7 @@ The main use case of this application consits of a scanner that can be configure
 ### Monitoring Features
 
 - detection of [BalanceTransfer](https://polkadot.js.org/docs/substrate/events#transferaccountid32-accountid32-u128) events (sent to a Notifier)
+- detection of [XCM Sent](https://github.com/w3f/polkadot-watcher-transaction/pull/250) events (sent to a Notifier)
 - detection of account's Balance under a certain threshold (exposed as Prometheus metrics)
 
 ## Configuration
