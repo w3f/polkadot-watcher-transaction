@@ -65,6 +65,15 @@ export const extractTransferInfoFromEvent = (event: Event, chainInfo: ChainInfo,
 function extractTransferInfoFromXcmEvent(event: XcmSentEvent, chainInfo: ChainInfo,  blockNumber: number): TransferInfo {
     const { origin, message } = event
     let { destination } = event
+
+    // TODO: Validate message for the supported set of XCM instructions.
+    // Categorize instructions as:
+    //   - Supported
+    //   - Unsupported (custom XCM): instructions not yet supported that may require custom handling.
+    //   - Instructions that do not involve asset transfers, should be skipped during processing.
+    // Example: Some instructions, such as `Transact`, do not involve asset transfers.
+    // https://polkadot.subscan.io/block/23164873?tab=event&event=23164873-57
+
     // 1. Get origin from the MultiLocation (X1.AccountId32)
     const originAddress = getLocation(origin, chainInfo, blockNumber)
     // 2. Get beneficiary
@@ -109,8 +118,11 @@ function extractTransferInfoFromXcmEvent(event: XcmSentEvent, chainInfo: ChainIn
 }
 
 function getLocation(location: StagingXcmV4Location, chainInfo: ChainInfo, blockNumber: number): string {
-    if (!(location?.interior.isX1)) {
-        log.error(`XCM. Junctions not supported: ${location?.interior.type}. Block ${blockNumber}`)
+    if (!location || !location.interior) {
+        log.info(`XCM. Instruction not supported or doesn't include asset transfer. Block ${blockNumber}`)
+        return 'Unknown'
+    } else if (!(location.interior.isX1)) {
+        log.info(`XCM. Junctions not supported: ${location?.interior.type}. Block ${blockNumber}`)
         return 'Unknown'
     }
     const x1 = location.interior.asX1[0]
@@ -123,7 +135,7 @@ function getLocation(location: StagingXcmV4Location, chainInfo: ChainInfo, block
         const chainIndex =  x1.asParachain.toString()
         return parachainNames[chainInfo.id][chainIndex] || `Parachain ${chainIndex}`;
     } else {
-        log.error(`XCM. Junctions not supported: ${x1.type}. Block ${blockNumber}`)
+        log.info(`XCM. Junctions not supported: ${x1.type}. Block ${blockNumber}`)
     }
     return 'Unknown'
 }
@@ -146,7 +158,7 @@ function getTokenAmountFromAsset(assets: StagingXcmV4Asset[], chainInfo: ChainIn
             // TODO: AssetHub monitoring. The token address should be processed.
             continue
         } else {
-            log.error(`Asset Junctions not supported: ${interior.type}. Block ${blockNumber}`)
+            log.info(`Asset Junctions not supported: ${interior.type}. Block ${blockNumber}`)
             continue
         }
         result.push([token, amount])
