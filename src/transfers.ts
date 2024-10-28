@@ -66,13 +66,13 @@ function extractTransferInfoFromXcmEvent(event: XcmSentEvent, chainInfo: ChainIn
     const { origin, message } = event
     let { destination } = event
 
-    // TODO: Validate message for the supported set of XCM instructions.
-    // Categorize instructions as:
-    //   - Supported
-    //   - Unsupported (custom XCM): instructions not yet supported that may require custom handling.
-    //   - Instructions that do not involve asset transfers, should be skipped during processing.
-    // Example: Some instructions, such as `Transact`, do not involve asset transfers.
-    // https://polkadot.subscan.io/block/23164873?tab=event&event=23164873-57
+    // TODO: Validate if the message includes a supported command.
+    // Categorize commands as:
+    //   - Supported.
+    //   - Unsupported (custom XCM): commands that include one or more instructions not yet supported and may require custom handling.
+    //   - Non-asset-transfer: commands that do not involve asset transfers and should be skipped during processing.
+    // Example: Some commands, such as those including only a `Transact` instruction, do not involve asset transfers.
+    // Reference: https://polkadot.subscan.io/block/23164873?tab=event&event=23164873-57
 
     // 1. Get origin from the MultiLocation (X1.AccountId32)
     const originAddress = getLocation(origin, chainInfo, blockNumber)
