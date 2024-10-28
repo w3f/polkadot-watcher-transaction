@@ -109,8 +109,8 @@ function extractTransferInfoFromXcmEvent(event: XcmSentEvent, chainInfo: ChainIn
 }
 
 function getLocation(location: StagingXcmV4Location, chainInfo: ChainInfo, blockNumber: number): string {
-    if (!(location.interior.isX1)) {
-        log.error(`XCM. Junctions not supported: ${location.interior.type}. Block ${blockNumber}`)
+    if (!(location?.interior.isX1)) {
+        log.error(`XCM. Junctions not supported: ${location?.interior.type}. Block ${blockNumber}`)
         return 'Unknown'
     }
     const x1 = location.interior.asX1[0]
