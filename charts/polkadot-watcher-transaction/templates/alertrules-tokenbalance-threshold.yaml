@@ -1,0 +1,27 @@
+# max by(job,namespace,network,address,name) is the primary key which all the metrics are aggregated by to avoid alerts flapping: i.e. when a K8s pod restarts 
+# The same result could be achieved by applying max without(instance,pod)
+# --
+# All the queries are also filtered by the "environment" label: i.e. to not mix metrics coming from staging and production environments
+
+{{ if and .Values.prometheusRules.enabled ( ne .Values.config.environment "ci" ) }}
+{{ if and .Values.config.subscriber.modules.tokenBalanceBelowThreshold.enabled ( ne .Values.config.environment "ci" ) }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+{{ toYaml .Values.prometheusRules.labels | indent 4 }}
+  name: {{ .Release.Name }}-tokenbalance-threshold
+spec:
+  groups:
+  - name: {{ .Release.Name }}-tokenbalance-threshold.rules
+    rules:
+    - alert: AccountTokenBalanceBelowDesired
+      annotations:
+        message: 'Target <a href="https://assethub-{{`{{ $labels.network }}`}}.subscan.io/account/{{`{{ $labels.address }}`}}">{{`{{ $labels.name }}`}}</a> has less tokens than expected...'
+      expr: max without(instance,pod) (last_over_time(polkadot_account_token_balance_desired[10m]) - last_over_time(polkadot_account_token_balance_current[10m])) > 0  
+      for: 2m
+      labels:
+        severity: warning
+        origin: {{ .Values.prometheusRules.origin }} 
+{{ end }}        
+{{ end }}

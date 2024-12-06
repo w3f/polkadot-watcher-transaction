@@ -10,6 +10,8 @@ export class Prometheus implements PromClient {
     private scanHeight: promClient.Gauge<"network" | "environment">
     private balanceCurrent: promClient.Gauge<"network" | "name" | "address" | "environment">
     private balanceDesired: promClient.Gauge<"network" | "name" | "address" | "environment">
+    private tokenBalanceCurrent: promClient.Gauge<"network" | "name" | "address" | "token" | "environment">
+    private tokenBalanceDesired: promClient.Gauge<"network" | "name" | "address" | "token" | "environment">
     private defaultBalanceDesired: number;
     private readonly logger: Logger = LoggerSingleton.getInstance()
     private readonly environment: string
@@ -22,6 +24,9 @@ export class Prometheus implements PromClient {
       if(config.subscriber.modules.balanceBelowThreshold?.enabled){
         this.defaultBalanceDesired = config.subscriber.modules.balanceBelowThreshold.threshold
         this._initBalanceThresholdMetrics()
+      }
+      if(config.subscriber.modules.tokenBalanceBelowThreshold?.enabled){
+        this._initTokenBalanceThresholdMetrics()
       }
     }
 
@@ -51,6 +56,14 @@ export class Prometheus implements PromClient {
       this.balanceDesired.set({network:network, name, address, environment: this.environment }, balance);        
     }
 
+    updateCurrentTokenBalance(network: string, name: string, address: string, token: string, balance: number): void {
+      this.tokenBalanceCurrent.set({network:network, name, address, token, environment: this.environment }, balance);        
+    }
+
+    updateDesiredTokenBalance(network: string, name: string, address: string, token: string, balance: number): void {
+      this.tokenBalanceDesired.set({network:network, name, address, token, environment: this.environment }, balance);        
+    }
+
     _initMetrics(): void {
       this.scanHeight = new promClient.Gauge({
         name: 'polkadot_watcher_tx_scan_height',
@@ -69,6 +82,19 @@ export class Prometheus implements PromClient {
         name: 'polkadot_account_balance_desired',
         help: 'Minimum Desired balance',
         labelNames: ['network', 'name', 'address', 'environment']
+      });
+    }
+
+    _initTokenBalanceThresholdMetrics(): void {
+      this.tokenBalanceCurrent = new promClient.Gauge({
+        name: 'polkadot_account_token_balance_current',
+        help: 'Current balance',
+        labelNames: ['network', 'name', 'address', 'token', 'environment']
+      });
+      this.tokenBalanceDesired = new promClient.Gauge({
+        name: 'polkadot_account_token_balance_desired',
+        help: 'Minimum Desired balance',
+        labelNames: ['network', 'name', 'address', 'token', 'environment']
       });
     }
 
