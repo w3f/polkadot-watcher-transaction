@@ -40,6 +40,7 @@ export interface InputConfig {
 export interface Subscribable {
   name: string;
   address: string;
+  token?: string;
   transferEventScanner?: SubscriptionModuleConfig;
   threshold?: number;
   thresholdCountReserved?: boolean; 
@@ -75,6 +76,9 @@ export interface SubscriberConfig {
     balanceBelowThreshold?: {
       enabled: boolean;
       threshold: number;
+    };
+    tokenBalanceBelowThreshold?: {
+      enabled: boolean;
     };
   };
 }
@@ -146,4 +150,6 @@ export interface PromClient {
   updateScanHeight(network: string, blockNumber: number): void;
   updateDesiredBalance(network: string, name: string, address: string, balance?: number): void;
   updateCurrentBalance(network: string, name: string, address: string, balance: number): void;
+  updateDesiredTokenBalance(network: string, name: string, address: string, token:string, balance: number): void;
+  updateCurrentTokenBalance(network: string, name: string, address: string, token:string, balance: number): void;
 }

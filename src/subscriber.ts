@@ -6,6 +6,7 @@ import { EventScannerBased } from './subscriptionModules/eventScannerBased';
 import { SubscriptionModuleConstructorParams } from './subscriptionModules/ISubscribscriptionModule';
 import { Notifier } from './notifier/INotifier';
 import { BalanceBelowThreshold } from './subscriptionModules/balanceBelowThreshold';
+import { TokenBalanceBelowThreshold } from './subscriptionModules/tokenBalanceBelowThreshold';
 
 
 export const registry = new TypeRegistry()
@@ -20,6 +21,7 @@ export class Subscriber {
 
     private eventScannerBased: EventScannerBased;
     private balanceBelowThreshold: BalanceBelowThreshold;
+    private tokenBalanceBelowThreshold: TokenBalanceBelowThreshold;
     
     constructor(
         cfg: InputConfig,
@@ -50,6 +52,7 @@ export class Subscriber {
 
         this.config.modules?.transferEventScanner?.enabled != false && this.eventScannerBased.subscribe(); //default active
         this.config.modules?.balanceBelowThreshold?.enabled && this.balanceBelowThreshold.subscribe(); //default non active
+        this.config.modules?.tokenBalanceBelowThreshold?.enabled && this.tokenBalanceBelowThreshold.subscribe(); //default non active
     }
 
     public triggerTestTransfer = async (): Promise<boolean> => {
@@ -111,6 +114,7 @@ export class Subscriber {
 
       this.eventScannerBased = new EventScannerBased(subscriptionModuleConfig,this.promClient)
       this.balanceBelowThreshold = new BalanceBelowThreshold(subscriptionModuleConfig,this.promClient)
+      this.tokenBalanceBelowThreshold = new TokenBalanceBelowThreshold(subscriptionModuleConfig,this.promClient)
     }
 
 }
