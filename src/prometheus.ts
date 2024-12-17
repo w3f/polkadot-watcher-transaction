@@ -57,11 +57,19 @@ export class Prometheus implements PromClient {
     }
 
     updateCurrentTokenBalance(network: string, name: string, address: string, token: string, balance: number): void {
-      this.tokenBalanceCurrent.set({network:network, name, address, token, environment: this.environment }, balance);        
+      this.tokenBalanceCurrent.set({network:this._toSubscanAssethubFormat(network), name, address, token, environment: this.environment }, balance);        
     }
 
     updateDesiredTokenBalance(network: string, name: string, address: string, token: string, balance: number): void {
-      this.tokenBalanceDesired.set({network:network, name, address, token, environment: this.environment }, balance);        
+      this.tokenBalanceDesired.set({network:this._toSubscanAssethubFormat(network), name, address, token, environment: this.environment }, balance);        
+    }
+
+    _toSubscanAssethubFormat(network: string): string{
+      if(network.includes("kusama"))
+        return "assethub-kusama"
+      if(network.includes("polkadot"))
+        return "assethub-polkadot"
+      return "unknown"
     }
 
     _initMetrics(): void {
