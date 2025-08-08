@@ -2,12 +2,9 @@ import '@polkadot/api-augment/polkadot';
 import { Balance, Event, CodecHash, EventRecord } from '@polkadot/types/interfaces';
 import { DeriveAccountRegistration } from '@polkadot/api-derive/accounts/types';
 import { StagingXcmV4Location, StagingXcmV4Xcm, StagingXcmV4Asset } from '@polkadot/types/lookup';
-import { TypeRegistry } from '@polkadot/types';
-
-
 export type ChainId = 'polkadot' | 'kusama'
 
-export { StagingXcmV4Location, StagingXcmV4Xcm, StagingXcmV4Asset, Balance, Event, EventRecord, CodecHash, DeriveAccountRegistration, TypeRegistry }
+export { StagingXcmV4Location, StagingXcmV4Xcm, StagingXcmV4Asset, Balance, Event, EventRecord, CodecHash, DeriveAccountRegistration }
 
 export interface ChainInfo {
   id: ChainId;

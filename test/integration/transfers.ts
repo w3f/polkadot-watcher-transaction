@@ -5,7 +5,6 @@ import { chainsInfo } from '../../src/constants';
 import { extractTransferInfoFromEvent, isTransferEvent } from '../../src/transfers';
 import { xcmTests } from './xcmData'
 import { balancesTests } from './balancesData'
-import { registry } from '../../src/subscriber';
 
 
 const chains: ChainId[] = ['kusama', 'polkadot'];
@@ -20,7 +19,7 @@ for (const chain of chains) {
     let api: ApiPromise;
 
     before(async (): Promise<void> => {
-      api = await ApiPromise.create({ provider: new WsProvider(urls[chain]), registry, throwOnConnect: true });
+      api = await ApiPromise.create({ provider: new WsProvider(urls[chain]), throwOnConnect: true });
     });
 
     after(async (): Promise<void> => {

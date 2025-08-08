@@ -5,7 +5,6 @@ import {
     Event, TransferInfo, XcmSentEvent, StagingXcmV4Xcm, StagingXcmV4Location, StagingXcmV4Asset,
     ChainInfo, BalancesTransferEvent, Balance } from './types';
 import { parachainNames } from './constants';
-import { registry } from './subscriber';
 
 
 const log: Logger = LoggerSingleton.getInstance()
@@ -39,9 +38,9 @@ export const extractTransferInfoFromEvent = (event: Event, chainInfo: ChainInfo,
     } else if (isXcmSentEvent(event)) {
         const [rawOrigin, rawDestination, rawMessage] = event.data
         const xcmSent: XcmSentEvent = {
-            origin: registry.createType('StagingXcmV4Location',rawOrigin.toU8a()),
-            destination: registry.createType('StagingXcmV4Location',rawDestination.toU8a()),
-            message: registry.createType('StagingXcmV4Xcm',rawMessage.toU8a())
+            origin: rawOrigin as unknown as StagingXcmV4Location,
+            destination: rawDestination as unknown as StagingXcmV4Location,
+            message: rawMessage as unknown as StagingXcmV4Xcm
         }
         return extractTransferInfoFromXcmEvent(xcmSent, chainInfo, blockNumber);
 
