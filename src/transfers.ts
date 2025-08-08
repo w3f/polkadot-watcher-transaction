@@ -75,6 +75,24 @@ function extractTransferInfoFromXcmEvent(event: XcmSentEvent, chainInfo: ChainIn
 
     // 1. Get origin from the MultiLocation (X1.AccountId32)
     const originAddress = getLocation(origin, chainInfo, blockNumber)
+    
+    // Early return if we can't determine the origin
+    if (!originAddress || originAddress === 'Unknown') {
+        log.info(`XCM. Cannot determine origin at block ${blockNumber}`)
+        return {
+            origin: {
+                address: 'Unknown',
+                chain: chainInfo.id
+            },
+            destination: {
+                address: 'Unknown',
+                chain: 'Unknown'
+            },
+            amount: 'Unknown',
+            token: 'Unknown'
+        }
+    }
+    
     // 2. Get beneficiary
     // 2.1. Try from "DepositAsset" instruction, which is common for most of extrinsics
     let beneficiaryInstruction = findInstruction(message, 'DepositAsset');
@@ -101,7 +119,7 @@ function extractTransferInfoFromXcmEvent(event: XcmSentEvent, chainInfo: ChainIn
     )
 
     // TODO: AssetHub monitoring. The list of assets should be returned instead.
-    const [token, amount] = transfers[0]
+    const [token, amount] = transfers[0] || ['Unknown', 'Unknown']
     return {
         origin: {
             address: originAddress,
