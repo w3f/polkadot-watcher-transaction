@@ -39,9 +39,9 @@ export const extractTransferInfoFromEvent = (event: Event, chainInfo: ChainInfo,
     } else if (isXcmSentEvent(event)) {
         const [rawOrigin, rawDestination, rawMessage] = event.data
         const xcmSent: XcmSentEvent = {
-            origin: registry.createType('StagingXcmV4Location',rawOrigin.toU8a()),
-            destination: registry.createType('StagingXcmV4Location',rawDestination.toU8a()),
-            message: registry.createType('StagingXcmV4Xcm',rawMessage.toU8a())
+            origin: rawOrigin as unknown as StagingXcmV4Location,
+            destination: rawDestination as unknown as StagingXcmV4Location,
+            message: rawMessage as unknown as StagingXcmV4Xcm
         }
         return extractTransferInfoFromXcmEvent(xcmSent, chainInfo, blockNumber);
 
@@ -76,6 +76,23 @@ function extractTransferInfoFromXcmEvent(event: XcmSentEvent, chainInfo: ChainIn
 
     // 1. Get origin from the MultiLocation (X1.AccountId32)
     const originAddress = getLocation(origin, chainInfo, blockNumber)
+
+    if (!originAddress || originAddress === 'Unknown') {
+        log.info(`XCM. Cannot determine origin at block ${blockNumber}`)
+        return {
+            origin: {
+                address: 'Unknown',
+                chain: chainInfo.id
+            },
+            destination: {
+                address: 'Unknown',
+                chain: 'Unknown'
+            },
+            amount: 'Unknown',
+            token: 'Unknown'
+        }
+    }
+
     // 2. Get beneficiary
     // 2.1. Try from "DepositAsset" instruction, which is common for most of extrinsics
     let beneficiaryInstruction = findInstruction(message, 'DepositAsset');
