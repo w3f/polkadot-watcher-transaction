@@ -39,9 +39,9 @@ export const extractTransferInfoFromEvent = (event: Event, chainInfo: ChainInfo,
     } else if (isXcmSentEvent(event)) {
         const [rawOrigin, rawDestination, rawMessage] = event.data
         const xcmSent: XcmSentEvent = {
-            origin: registry.createType('StagingXcmV4Location',rawOrigin.toU8a()),
-            destination: registry.createType('StagingXcmV4Location',rawDestination.toU8a()),
-            message: registry.createType('StagingXcmV4Xcm',rawMessage.toU8a())
+            origin: rawOrigin as unknown as StagingXcmV4Location,
+            destination: rawDestination as unknown as StagingXcmV4Location,
+            message: rawMessage as unknown as StagingXcmV4Xcm
         }
         return extractTransferInfoFromXcmEvent(xcmSent, chainInfo, blockNumber);
 
